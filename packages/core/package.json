@@ -1,0 +1,7 @@
+{
+  "name": "@novel-reader/core",
+  "version": "0.1.0",
+  "description": "核心逻辑：文件解析、搜索算法",
+  "main": "src/index.js",
+  "scripts": {}
+}

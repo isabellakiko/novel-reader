@@ -1,0 +1,12 @@
+{
+  "name": "novel-reader",
+  "version": "0.1.0",
+  "private": true,
+  "description": "本地小说阅读器",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "preview": "pnpm --filter web preview"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

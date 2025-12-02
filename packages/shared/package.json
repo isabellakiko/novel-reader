@@ -1,0 +1,7 @@
+{
+  "name": "@novel-reader/shared",
+  "version": "0.1.0",
+  "description": "共享工具函数和常量",
+  "main": "src/index.js",
+  "scripts": {}
+}
