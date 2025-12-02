@@ -4,7 +4,7 @@
 
 **最后更新**: 2025-12-02
 **项目阶段**: Phase 2 - 基础搭建
-**当前状态**: 开发环境已就绪，待开发核心解析模块
+**当前状态**: 核心解析模块完成，待开发基础布局
 
 ---
 
@@ -18,8 +18,8 @@
 - 强大的全局搜索（按角色/章节分组、高亮跳转）
 - 精美现代的 UI（Framer Motion 动画）
 
-**开发进度**: Step 1-2 完成，Step 3 待开发
-**下一步**: 实现 `packages/core` 的 TXT 解析功能
+**开发进度**: Step 1-3 完成，Step 4 待开发
+**下一步**: 实现基础布局 + 主题系统
 
 ---
 
@@ -45,14 +45,14 @@
 
 - Step 1: Monorepo 基础结构（pnpm workspace）
 - Step 2: Vite + React + 依赖配置（Tailwind、Framer Motion、Radix UI 等）
-
-### 🚧 进行中
-
-- AI 协作系统配置（4 层文档架构 + Slash Commands）
+- AI 协作系统配置（4 层文档架构 + 6 个 Slash Commands）
+- Step 3: 核心解析模块（packages/core）
+  - 编码检测（GBK/UTF-8/Big5 等）
+  - TXT 解析器（32MB 文件 <100ms）
+  - 章节识别（10+ 种格式）
 
 ### 📋 待开始
 
-- Step 3: 核心解析模块（packages/core）
 - Step 4: 基础布局 + 主题系统
 - Step 5: 书架页面
 - Step 6: 阅读器页面
@@ -108,16 +108,16 @@ novel-reader/
 ## 下一步任务
 
 ### 当前焦点
-实现 TXT 文件解析功能（packages/core）
+Step 4: 基础布局 + 主题系统
 
 ### 优先级 1（本周）
-1. 编码检测模块（encoding.js）
-2. TXT 解析器（txt-parser.js）
-3. 章节识别（chapter-detector.js）
+1. 路由配置（React Router）
+2. 全局 Layout 组件
+3. 主题系统（白天/夜间/护眼）
 
 ### 优先级 2（下周）
-1. 基础布局框架
-2. 主题系统（白天/夜间/护眼）
+1. 书架页面框架
+2. 文件上传组件
 
 ---
 

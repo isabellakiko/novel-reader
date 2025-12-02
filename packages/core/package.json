@@ -2,6 +2,16 @@
   "name": "@novel-reader/core",
   "version": "0.1.0",
   "description": "核心逻辑：文件解析、搜索算法",
+  "type": "module",
   "main": "src/index.js",
-  "scripts": {}
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node test/parse-test.js"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.7.0",
+    "jschardet": "^3.1.4"
+  }
 }
