@@ -26,3 +26,10 @@ export {
 
 // === TXT 解析器 ===
 export { parseTxtFile, previewTxtFile, PARSE_STAGES } from './parser/txt-parser.js'
+
+// === 搜索引擎 ===
+export {
+  searchBook,
+  searchBooks,
+  highlightMatches,
+} from './search/search-engine.js'

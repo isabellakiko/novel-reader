@@ -10,8 +10,5 @@
   "scripts": {
     "test": "node test/parse-test.js"
   },
-  "dependencies": {
-    "iconv-lite": "^0.7.0",
-    "jschardet": "^3.1.4"
-  }
+  "dependencies": {}
 }

@@ -15,12 +15,16 @@
 **本周目标**：
 - [x] 完成 AI 协作系统配置
 - [x] 完成 Step 3 核心解析模块
+- [x] 完成 Web 前端基础功能
 
 **本周完成**：
 - ✅ 建立 4 层文档架构
 - ✅ 配置 6 个 Slash Commands
 - ✅ 创建项目上下文文档
 - ✅ 完成核心解析模块（编码检测 + 章节识别 + TXT 解析）
+- ✅ Web 前端：书架、阅读器、搜索功能
+- ✅ 多模式搜索系统（4 种模式）
+- ✅ 3D 书籍卡片设计
 
 **工作时长**: 进行中
 **Commits**: 待统计
@@ -29,34 +33,50 @@
 
 ## Day-by-Day 开发日志
 
-### Day 1 - 2025-12-02（周二）⭐ AI 协作系统 + 核心解析模块
+### Day 1 - 2025-12-02（周二）⭐ AI 协作系统 + 核心解析 + Web 前端
 
-**工作时长**: 进行中
-**核心任务**: AI 协作系统配置 + Step 3 核心解析模块
+**工作时长**: 全天
+**核心任务**: AI 协作系统 + 核心解析模块 + Web 前端基础功能
 
 **完成工作**：
+
+**阶段 1: AI 协作系统**
 - ✅ 阅读 docs/guides 下所有配置指南
 - ✅ 建立 4 层文档架构目录
 - ✅ 创建 CONTEXT.md 和 CURRENT.md
-- ✅ 创建开发、架构、项目层文档
 - ✅ 配置 6 个 Slash Commands
 - ✅ Git 初始化并推送到 GitHub
-- ✅ **Step 3: 核心解析模块**
-  - `types/book.js` - Book/Chapter 数据结构
-  - `parser/encoding.js` - GBK/UTF-8 编码检测与转换
-  - `parser/chapter-detector.js` - 章节正则识别
-  - `parser/txt-parser.js` - TXT 完整解析器
-  - `test/parse-test.js` - 测试脚本
+
+**阶段 2: 核心解析模块**
+- ✅ `types/book.js` - Book/Chapter 数据结构
+- ✅ `parser/encoding.js` - GBK/UTF-8 编码检测与转换
+- ✅ `parser/chapter-detector.js` - 章节正则识别
+- ✅ `parser/txt-parser.js` - TXT 完整解析器
+- ✅ 32.5 MB GBK 文件解析仅需 69ms
+
+**阶段 3: Web 前端功能**
+- ✅ 修复 react-window v2.x 导入错误（降级到 v1.8.10）
+- ✅ 3D 书籍卡片设计（悬浮旋转、书脊效果、8 种配色）
+- ✅ **多模式搜索系统**（4 种模式）：
+  - 章节概览：每章 1 条，快速定位
+  - 详细搜索：显示所有匹配，按章节分组
+  - 频率统计：按出现次数排序，带进度条
+  - 时间线：按顺序平铺，追踪关键词演变
+- ✅ Web Worker 后台搜索（不阻塞 UI）
+- ✅ 修复章节切换不滚动到顶部的问题
 
 **技术亮点**：
-- 适配指南到项目特点：`apps/web` 而非 `apps/frontend`
-- 32.5 MB GBK 文件解析仅需 69ms
-- 支持 10+ 种章节格式正则匹配
 - Browser/Node.js 双环境兼容（Buffer 检测）
+- Web Worker 后台全文搜索，支持 CJK 全词匹配
+- 4 种搜索模式满足不同场景（概览/详细/频率/时间线）
+- 3D CSS Transform 书籍卡片效果
 
 **遇到的问题**：
-- **问题**: `Buffer.from()` 在浏览器中不存在
-- **解决方案**: 添加 `typeof Buffer !== 'undefined'` 检测，浏览器使用 Uint8Array
+- **问题 1**: `Buffer.from()` 在浏览器中不存在
+- **解决**: 运行时检测 `typeof Buffer`，浏览器使用 Uint8Array
+
+- **问题 2**: react-window v2.x 不导出 `FixedSizeList`
+- **解决**: 降级到 react-window@^1.8.10
 
 **测试验证**：
 - 样本文件：张成.txt（32.5 MB, GBK）
@@ -73,10 +93,13 @@
 - [x] Step 3: 编码检测模块
 - [x] Step 3: TXT 解析器
 - [x] Step 3: 章节识别
+- [x] Web 前端基础功能（书架、阅读器）
+- [x] 多模式搜索系统
 
 ### P2（Medium）
-- [ ] Step 4: 基础布局框架
-- [ ] Step 4: 主题系统
+- [x] 3D 书籍卡片设计
+- [ ] 阅读进度持久化优化
+- [ ] 书签功能
 
 ---
 

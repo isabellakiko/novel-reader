@@ -2,14 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 基础样式重置 */
-* {
-  box-sizing: border-box;
+@layer base {
+  /* ===== 主题变量定义 ===== */
+
+  /* 白天模式（默认） */
+  :root,
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    --primary: 220 90% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 220 90% 56%;
+
+    --sidebar: 240 5% 98%;
+  }
+
+  /* 夜间模式 */
+  .dark {
+    --background: 240 10% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 240 10% 10%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 240 10% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 220 90% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 220 90% 56%;
+
+    --sidebar: 240 10% 6%;
+  }
+
+  /* 护眼模式 */
+  .sepia {
+    --background: 40 40% 94%;
+    --foreground: 30 20% 20%;
+
+    --card: 40 40% 96%;
+    --card-foreground: 30 20% 20%;
+
+    --popover: 40 40% 96%;
+    --popover-foreground: 30 20% 20%;
+
+    --primary: 30 60% 45%;
+    --primary-foreground: 40 40% 96%;
+
+    --secondary: 40 30% 88%;
+    --secondary-foreground: 30 20% 20%;
+
+    --muted: 40 30% 88%;
+    --muted-foreground: 30 15% 45%;
+
+    --accent: 40 30% 88%;
+    --accent-foreground: 30 20% 20%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 40 40% 96%;
+
+    --border: 40 25% 85%;
+    --input: 40 25% 85%;
+    --ring: 30 60% 45%;
+
+    --sidebar: 40 35% 90%;
+  }
 }
 
-body {
-  @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100;
-  @apply transition-colors duration-200;
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    @apply transition-colors duration-200;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
 }
 
 /* 自定义滚动条 */
@@ -19,13 +126,19 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-800;
+  @apply bg-muted/50;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  @apply bg-muted-foreground/30 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
+  @apply bg-muted-foreground/50;
+}
+
+/* 阅读区域特殊样式 */
+.reading-content {
+  @apply leading-relaxed;
+  font-family: "Noto Serif SC", "Source Han Serif CN", "STSong", serif;
 }
