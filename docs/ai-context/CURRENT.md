@@ -113,10 +113,26 @@
 - ✅ Library 页面支持本地/云端双模式
 - ✅ BookCard 组件显示来源标识
 
+**阶段 3: Gradle → Maven 迁移**
+- ✅ 创建 `pom.xml` 替代 `build.gradle.kts`
+- ✅ 配置 Maven Wrapper（mvnw、mvnw.cmd）
+- ✅ 删除所有 Gradle 文件
+- ✅ 更新所有文档（DEPLOYMENT、DEVELOPMENT、tech-stack 等）
+- ✅ 修复 `package.json` npm scripts（gradlew → mvnw）
+- ✅ 修复 `.gitignore`（build/ → target/）
+- ✅ 全面审计确保无 Gradle 残留
+
+**阶段 4: H2 持久化配置**
+- ✅ H2 内存模式 → 文件模式
+- ✅ 数据持久化到 `data/novelreader.mv.db`
+- ✅ 确认 `.gitignore` 忽略 `data/` 目录
+
 **技术亮点**：
 - JWT 24h 过期 + 自动 Token 失效处理
 - 离线优先策略（本地存储 + 云端同步）
 - 登录状态持久化（Zustand persist）
+- Maven Wrapper 支持无 Maven 环境构建
+- H2 AUTO_SERVER 模式支持多进程访问
 
 **技术亮点（Day 1）**：
 - Browser/Node.js 双环境兼容（Buffer 检测）
@@ -150,10 +166,13 @@
 
 ### 后端功能
 - [x] Spring Boot 3 + Java 21
+- [x] Maven 构建系统（含 Maven Wrapper）
 - [x] JWT 认证
 - [x] 书籍上传/管理
 - [x] 阅读进度同步
 - [x] 书签同步
+- [x] H2 文件模式持久化
+- [x] Flyway 数据库迁移
 
 ### UI 组件
 - [x] 3D 书籍卡片
