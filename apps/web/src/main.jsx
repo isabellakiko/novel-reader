@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
-import { router } from './router'
+import { router, preloadCorePages } from './router'
 import { useThemeStore } from './stores/theme'
 import useAuthStore from './stores/auth'
 import './index.css'
@@ -17,3 +17,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <RouterProvider router={router} />
   </React.StrictMode>,
 )
+
+// 预加载核心页面（在浏览器空闲时）
+preloadCorePages()

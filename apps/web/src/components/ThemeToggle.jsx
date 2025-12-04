@@ -1,15 +1,16 @@
 /**
  * 主题切换组件
  *
- * 支持三种主题：白天、夜间、护眼
+ * 支持四种主题：自动、白天、夜间、护眼
  */
 
-import { Sun, Moon, Eye } from 'lucide-react'
+import { Sun, Moon, Eye, Monitor } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useThemeStore, THEMES } from '../stores/theme'
 import { cn } from '../lib/utils'
 
 const icons = {
+  system: Monitor,
   light: Sun,
   dark: Moon,
   sepia: Eye,

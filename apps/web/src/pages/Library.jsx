@@ -14,6 +14,8 @@ import useAuthStore from '../stores/auth'
 import useSyncStore from '../stores/sync'
 import FileUpload from '../components/FileUpload'
 import BookCard from '../components/BookCard'
+import EmptyState, { NoSearchResults } from '../components/ui/EmptyState'
+import { listContainerVariants, listItemVariants } from '../lib/animations'
 import { cn } from '../lib/utils'
 
 // 动态导入解析模块（避免打包体积问题）
@@ -307,50 +309,48 @@ export default function Library() {
 
         {/* 空状态 */}
         {!isLoading && allBooks.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-              <BookOpen className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium mb-2">书架空空如也</h3>
-            <p className="text-muted-foreground mb-6">
-              点击上方"导入书籍"按钮，开始你的阅读之旅
-            </p>
-            <button
-              onClick={() => setShowUpload(true)}
-              className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-            >
-              导入第一本书
-            </button>
-          </motion.div>
+          <EmptyState
+            icon={BookOpen}
+            title="书架空空如也"
+            description="点击上方「导入书籍」按钮，开始你的阅读之旅"
+            action={
+              <button
+                onClick={() => setShowUpload(true)}
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+              >
+                导入第一本书
+              </button>
+            }
+          />
         )}
 
         {/* 搜索无结果 */}
         {!isLoading && allBooks.length > 0 && filteredBooks.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              没有找到匹配"{searchQuery}"的书籍
-            </p>
-          </div>
+          <NoSearchResults query={searchQuery} />
         )}
 
         {/* 书籍网格 */}
         {!isLoading && filteredBooks.length > 0 && (
           <motion.div
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6"
+            variants={listContainerVariants}
+            initial="hidden"
+            animate="show"
             layout
           >
             <AnimatePresence mode="popLayout">
-              {filteredBooks.map((book) => (
-                <BookCard
+              {filteredBooks.map((book, index) => (
+                <motion.div
                   key={book.id}
-                  book={book}
-                  onDelete={handleDelete}
-                  progress={readingProgress[book.id]}
-                />
+                  variants={listItemVariants}
+                  layout
+                >
+                  <BookCard
+                    book={book}
+                    onDelete={handleDelete}
+                    progress={readingProgress[book.id]}
+                  />
+                </motion.div>
               ))}
             </AnimatePresence>
           </motion.div>

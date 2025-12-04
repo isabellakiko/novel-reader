@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
 
 export default defineConfig({
@@ -78,12 +79,70 @@ export default defineConfig({
         enabled: true,
       },
     }),
-  ],
+    // 构建分析（仅在分析模式下启用）
+    process.env.ANALYZE && visualizer({
+      open: true,
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@core': path.resolve(__dirname, '../../packages/core/src'),
       '@shared': path.resolve(__dirname, '../../packages/shared/src'),
     },
+  },
+  build: {
+    // 构建优化
+    target: 'esnext',
+    minify: 'esbuild',
+    sourcemap: false,
+    // 分块策略
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React 核心
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // UI 库
+          'ui-vendor': ['framer-motion', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-slider', '@radix-ui/react-switch'],
+          // 状态管理和存储
+          'state-vendor': ['zustand', 'dexie'],
+          // 图标和工具
+          'utils-vendor': ['lucide-react', 'axios'],
+        },
+        // 资源文件名格式
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+      },
+    },
+    // chunk 大小警告阈值
+    chunkSizeWarningLimit: 500,
+  },
+  // 服务器优化
+  server: {
+    // 预热常用依赖
+    warmup: {
+      clientFiles: [
+        './src/pages/Library.jsx',
+        './src/pages/Reader.jsx',
+        './src/components/BookCard.jsx',
+      ],
+    },
+  },
+  // 优化依赖预构建
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'framer-motion',
+      'zustand',
+      'dexie',
+      'lucide-react',
+      'axios',
+    ],
   },
 })

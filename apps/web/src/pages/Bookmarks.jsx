@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useBookmarkStore } from '../stores/bookmark'
+import EmptyState from '../components/ui/EmptyState'
 import { cn } from '../lib/utils'
 
 /**
@@ -254,25 +255,19 @@ export default function Bookmarks() {
 
           {/* 空状态 */}
           {!isLoading && allBookmarks.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-16"
-            >
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                <Bookmark className="w-10 h-10 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-medium mb-2">还没有书签</h3>
-              <p className="text-muted-foreground mb-6">
-                在阅读时点击书签按钮，收藏喜欢的段落
-              </p>
-              <button
-                onClick={() => navigate('/library')}
-                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-              >
-                前往书架
-              </button>
-            </motion.div>
+            <EmptyState
+              icon={Bookmark}
+              title="还没有书签"
+              description="在阅读时点击书签按钮，收藏喜欢的段落"
+              action={
+                <button
+                  onClick={() => navigate('/library')}
+                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                >
+                  前往书架
+                </button>
+              }
+            />
           )}
 
           {/* 按时间显示 */}

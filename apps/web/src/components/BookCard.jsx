@@ -64,13 +64,7 @@ export default function BookCard({ book, onDelete, progress }) {
   }
 
   return (
-    <motion.div
-      className="group relative"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      layout
-    >
+    <div className="group relative">
       {/* 书籍主体 - 3D 效果容器 */}
       <div
         className="relative cursor-pointer perspective-1000"
@@ -270,6 +264,6 @@ export default function BookCard({ book, onDelete, progress }) {
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
-    </motion.div>
+    </div>
   )
 }
