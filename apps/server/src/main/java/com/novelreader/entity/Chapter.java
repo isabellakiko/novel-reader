@@ -17,6 +17,16 @@ import java.time.LocalDateTime;
 @Builder
 public class Chapter {
 
+    /**
+     * 用于投影查询的构造函数（不含内容）
+     */
+    public Chapter(Long id, Integer chapterIndex, String title, Integer wordCount) {
+        this.id = id;
+        this.chapterIndex = chapterIndex;
+        this.title = title;
+        this.wordCount = wordCount;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
