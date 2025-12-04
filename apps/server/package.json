@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "./gradlew bootRun",
-    "build": "./gradlew build",
-    "test": "./gradlew test",
-    "clean": "./gradlew clean"
+    "dev": "./mvnw spring-boot:run",
+    "build": "./mvnw package",
+    "test": "./mvnw test",
+    "clean": "./mvnw clean"
   }
 }
