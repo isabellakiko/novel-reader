@@ -2,11 +2,12 @@
  * 侧边栏导航组件
  */
 
-import { NavLink } from 'react-router-dom'
-import { Library, BookOpen, Search, Bookmark, Settings } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { Library, BookOpen, Search, Bookmark, Settings, User, LogOut } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '../../lib/utils'
 import ThemeToggle from '../ThemeToggle'
+import useAuthStore from '../../stores/auth'
 
 const navItems = [
   { to: '/library', icon: Library, label: '书架' },
@@ -17,6 +18,14 @@ const navItems = [
 ]
 
 export default function Sidebar() {
+  const navigate = useNavigate()
+  const { user, isAuthenticated, logout } = useAuthStore()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/library')
+  }
+
   return (
     <aside className="w-16 md:w-56 bg-sidebar border-r border-border flex flex-col">
       {/* Logo */}
@@ -69,6 +78,38 @@ export default function Sidebar() {
           ))}
         </ul>
       </nav>
+
+      {/* 用户区域 */}
+      <div className="px-2 pb-2 border-t border-border pt-2">
+        {isAuthenticated ? (
+          <div className="flex items-center justify-between px-3 py-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium truncate hidden md:block">
+                {user?.username}
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+              title="退出登录"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <NavLink
+            to="/login"
+            className="flex items-center px-3 py-2.5 rounded-lg text-muted-foreground
+                     hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            <User className="w-5 h-5" />
+            <span className="ml-3 hidden md:block">登录同步</span>
+          </NavLink>
+        )}
+      </div>
 
       {/* 底部：主题切换 + 版本 */}
       <div className="p-3 border-t border-border flex items-center justify-between">

@@ -54,13 +54,20 @@ wc -l docs/ai-context/CURRENT.md
 ### 2.1 troubleshooting 文档
 - 检查是否有已修复且不再相关的问题
 - 检查是否有重复的问题记录
+- 检查前端和后端问题是否都有记录
 
-### 2.2 components.md / pages.md
-- 检查是否与代码同步
+### 2.2 前端文档
+- components.md - 检查是否与代码同步
+- pages.md - 检查是否与代码同步
 
-### 2.3 CONTEXT.md
+### 2.3 后端文档
+- api.md - 检查 API 是否与实际代码一致
+- database.md - 检查 schema 是否与 Flyway 迁移一致
+
+### 2.4 CONTEXT.md
 - 检查"当前状态"是否准确
 - 检查"下一步任务"是否需要更新
+- 检查前后端技术栈版本是否准确
 
 ## Step 3: Token 优化报告
 

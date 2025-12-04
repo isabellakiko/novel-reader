@@ -80,10 +80,20 @@ echo "当前时间: $CURRENT_DATE $CURRENT_TIME ($DAY_NAME)"
 - 更新 `docs/development/web/troubleshooting.md`
 - 添加问题描述、原因、解决方案
 
-### 组件开发场景
-如果新增了组件：
+### 前端组件开发场景
+如果新增了前端组件：
 - 更新 `docs/development/web/components.md`
 - 添加组件的 Props、用途、示例
+
+### 后端 API 开发场景
+如果新增或修改了后端 API：
+- 更新 `docs/development/backend/api.md`
+- 添加新 API 的请求/响应格式
+
+### 数据库变更场景
+如果修改了数据库 schema：
+- 更新 `docs/development/backend/database.md`
+- 确保 Flyway 迁移脚本已创建
 
 ## Step 4: Git 操作
 

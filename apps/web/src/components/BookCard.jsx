@@ -5,7 +5,7 @@
  */
 
 import { useNavigate } from 'react-router-dom'
-import { MoreVertical, Trash2, BookOpen } from 'lucide-react'
+import { MoreVertical, Trash2, BookOpen, Cloud, HardDrive } from 'lucide-react'
 import { motion } from 'framer-motion'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { cn } from '../lib/utils'
@@ -44,7 +44,8 @@ function generateCoverTheme(title) {
 export default function BookCard({ book, onDelete, progress }) {
   const navigate = useNavigate()
   const theme = generateCoverTheme(book.title)
-  const totalChapters = book.metadata?.totalChapters || book.chapters?.length || 0
+  const totalChapters = book.metadata?.totalChapters || book.chapters?.length || book.totalChapters || 0
+  const isCloud = book.source === 'cloud'
 
   // 计算阅读进度
   const currentChapter = progress?.chapterIndex ?? -1
@@ -111,8 +112,20 @@ export default function BookCard({ book, onDelete, progress }) {
                 theme.bg
               )}
             >
-              {/* 顶部装饰线 */}
-              <div className={cn('h-1 w-12 rounded-full mb-4', theme.accent)} />
+              {/* 顶部装饰线和来源标识 */}
+              <div className="flex items-center justify-between mb-4">
+                <div className={cn('h-1 w-12 rounded-full', theme.accent)} />
+                {/* 来源标识 */}
+                <div
+                  className={cn(
+                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-xs',
+                    isCloud ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-500/20 text-slate-300'
+                  )}
+                  title={isCloud ? '云端书籍' : '本地书籍'}
+                >
+                  {isCloud ? <Cloud className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
+                </div>
+              </div>
 
               {/* 书名 */}
               <h3

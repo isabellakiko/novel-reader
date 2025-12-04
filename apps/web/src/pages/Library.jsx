@@ -2,13 +2,16 @@
  * 书架页面
  *
  * 显示用户导入的所有书籍，支持搜索和排序
+ * 支持本地书籍和云端书籍
  */
 
 import { useEffect, useState, useCallback } from 'react'
-import { Search, Plus, BookOpen, Loader2 } from 'lucide-react'
+import { Search, Plus, BookOpen, Loader2, Cloud, HardDrive, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLibraryStore } from '../stores/library'
 import { progressStore } from '../stores/db'
+import useAuthStore from '../stores/auth'
+import useSyncStore from '../stores/sync'
 import FileUpload from '../components/FileUpload'
 import BookCard from '../components/BookCard'
 import { cn } from '../lib/utils'
@@ -22,10 +25,14 @@ const parseBook = async (file, onProgress) => {
 export default function Library() {
   const { books, isLoading, loadBooks, addBook, deleteBook, isImporting, setImportProgress } =
     useLibraryStore()
+  const { isAuthenticated } = useAuthStore()
+  const { cloudBooks, syncBooks, isSyncing, uploadBook } = useSyncStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [showUpload, setShowUpload] = useState(false)
   const [readingProgress, setReadingProgress] = useState({})
+  const [viewMode, setViewMode] = useState('all') // 'all' | 'local' | 'cloud'
+  const [uploadMode, setUploadMode] = useState('local') // 'local' | 'cloud'
 
   // 加载书籍列表和阅读进度
   useEffect(() => {
@@ -33,8 +40,26 @@ export default function Library() {
     progressStore.getAll().then(setReadingProgress)
   }, [loadBooks])
 
+  // 登录后同步云端书籍
+  useEffect(() => {
+    if (isAuthenticated) {
+      syncBooks()
+    }
+  }, [isAuthenticated, syncBooks])
+
+  // 合并本地和云端书籍
+  const allBooks = [
+    ...books.map((b) => ({ ...b, source: 'local' })),
+    ...cloudBooks.map((b) => ({ ...b, source: 'cloud' })),
+  ]
+
   // 过滤书籍
-  const filteredBooks = books.filter((book) => {
+  const filteredBooks = allBooks.filter((book) => {
+    // 来源筛选
+    if (viewMode === 'local' && book.source !== 'local') return false
+    if (viewMode === 'cloud' && book.source !== 'cloud') return false
+
+    // 搜索筛选
     if (!searchQuery) return true
     const query = searchQuery.toLowerCase()
     return (
@@ -47,6 +72,25 @@ export default function Library() {
   const handleFileSelect = useCallback(
     async (file) => {
       console.log('[Library] 开始处理文件:', file.name, '大小:', file.size)
+
+      // 云端上传
+      if (uploadMode === 'cloud' && isAuthenticated) {
+        try {
+          setImportProgress({ stage: 'uploading', percent: 0, message: '上传中...' })
+          await uploadBook(file, (percent) => {
+            setImportProgress({ stage: 'uploading', percent, message: `上传中 ${percent}%` })
+          })
+          setImportProgress(null)
+          setShowUpload(false)
+        } catch (error) {
+          console.error('[Library] 上传失败:', error)
+          setImportProgress(null)
+          alert('上传失败: ' + error.message)
+        }
+        return
+      }
+
+      // 本地导入
       try {
         setImportProgress({ stage: 'reading', percent: 0, message: '准备解析...' })
 
@@ -81,7 +125,7 @@ export default function Library() {
         alert('文件解析失败: ' + error.message)
       }
     },
-    [addBook, setImportProgress]
+    [addBook, setImportProgress, uploadMode, isAuthenticated, uploadBook]
   )
 
   // 处理删除
@@ -98,45 +142,104 @@ export default function Library() {
     <div className="h-full flex flex-col">
       {/* 头部 */}
       <header className="flex-shrink-0 px-4 md:px-6 py-4 border-b border-border">
-        {/* 移动端：标题 + 导入按钮 */}
-        <div className="flex items-center justify-between gap-4 mb-3 md:mb-0">
+        {/* 标题行 */}
+        <div className="flex items-center justify-between gap-4 mb-3">
           <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
             <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             我的书架
           </h1>
 
-          {/* 导入按钮 */}
-          <motion.button
-            onClick={() => setShowUpload(!showUpload)}
-            className={cn(
-              'flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg',
-              'bg-primary text-primary-foreground',
-              'hover:bg-primary/90 transition-colors'
+          <div className="flex items-center gap-2">
+            {/* 同步按钮 */}
+            {isAuthenticated && (
+              <motion.button
+                onClick={syncBooks}
+                disabled={isSyncing}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                whileTap={{ scale: 0.95 }}
+                title="同步云端"
+              >
+                <RefreshCw className={cn('w-4 h-4', isSyncing && 'animate-spin')} />
+              </motion.button>
             )}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">导入书籍</span>
-            <span className="sm:hidden">导入</span>
-          </motion.button>
+
+            {/* 导入按钮 */}
+            <motion.button
+              onClick={() => setShowUpload(!showUpload)}
+              className={cn(
+                'flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg',
+                'bg-primary text-primary-foreground',
+                'hover:bg-primary/90 transition-colors'
+              )}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">导入书籍</span>
+              <span className="sm:hidden">导入</span>
+            </motion.button>
+          </div>
         </div>
 
-        {/* 搜索框 - 移动端全宽 */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="搜索书籍..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn(
-              'w-full md:w-64 pl-9 pr-4 py-2 text-sm rounded-lg',
-              'bg-muted border border-transparent',
-              'focus:bg-background focus:border-primary focus:outline-none',
-              'transition-all'
-            )}
-          />
+        {/* 搜索和筛选 */}
+        <div className="flex items-center gap-3">
+          {/* 搜索框 */}
+          <div className="relative flex-1 md:flex-none">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="搜索书籍..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={cn(
+                'w-full md:w-64 pl-9 pr-4 py-2 text-sm rounded-lg',
+                'bg-muted border border-transparent',
+                'focus:bg-background focus:border-primary focus:outline-none',
+                'transition-all'
+              )}
+            />
+          </div>
+
+          {/* 来源筛选（仅登录用户显示） */}
+          {isAuthenticated && (
+            <div className="hidden sm:flex items-center gap-1 bg-muted rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('all')}
+                className={cn(
+                  'px-3 py-1.5 text-sm rounded-md transition-colors',
+                  viewMode === 'all'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                全部
+              </button>
+              <button
+                onClick={() => setViewMode('local')}
+                className={cn(
+                  'px-3 py-1.5 text-sm rounded-md transition-colors flex items-center gap-1',
+                  viewMode === 'local'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <HardDrive className="w-3 h-3" />
+                本地
+              </button>
+              <button
+                onClick={() => setViewMode('cloud')}
+                className={cn(
+                  'px-3 py-1.5 text-sm rounded-md transition-colors flex items-center gap-1',
+                  viewMode === 'cloud'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Cloud className="w-3 h-3" />
+                云端
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -151,11 +254,46 @@ export default function Library() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-6 overflow-hidden"
             >
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                isLoading={isImporting}
-                className="max-w-xl mx-auto"
-              />
+              <div className="max-w-xl mx-auto">
+                {/* 上传模式切换（仅登录用户显示） */}
+                {isAuthenticated && (
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <button
+                      onClick={() => setUploadMode('local')}
+                      className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors',
+                        uploadMode === 'local'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <HardDrive className="w-4 h-4" />
+                      本地导入
+                    </button>
+                    <button
+                      onClick={() => setUploadMode('cloud')}
+                      className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors',
+                        uploadMode === 'cloud'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Cloud className="w-4 h-4" />
+                      上传云端
+                    </button>
+                  </div>
+                )}
+                <FileUpload
+                  onFileSelect={handleFileSelect}
+                  isLoading={isImporting}
+                />
+                {uploadMode === 'cloud' && isAuthenticated && (
+                  <p className="text-center text-sm text-muted-foreground mt-2">
+                    上传到云端后，可在任何设备访问
+                  </p>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -168,7 +306,7 @@ export default function Library() {
         )}
 
         {/* 空状态 */}
-        {!isLoading && books.length === 0 && (
+        {!isLoading && allBooks.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -191,7 +329,7 @@ export default function Library() {
         )}
 
         {/* 搜索无结果 */}
-        {!isLoading && books.length > 0 && filteredBooks.length === 0 && (
+        {!isLoading && allBooks.length > 0 && filteredBooks.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
               没有找到匹配"{searchQuery}"的书籍

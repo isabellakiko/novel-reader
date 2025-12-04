@@ -4,7 +4,7 @@
 
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import Layout from './components/layout/Layout'
-import { Library, Reader, Search, Bookmarks, Settings } from './pages'
+import { Library, Reader, Search, Bookmarks, Settings, Login, Register } from './pages'
 
 export const router = createBrowserRouter([
   {
@@ -36,5 +36,13 @@ export const router = createBrowserRouter([
         element: <Settings />,
       },
     ],
+  },
+  {
+    path: '/login',
+    element: <Login />,
+  },
+  {
+    path: '/register',
+    element: <Register />,
   },
 ])

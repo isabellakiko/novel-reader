@@ -9,10 +9,18 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
+import NetworkStatus from '../ui/NetworkStatus'
+import ToastContainer from '../ui/ToastContainer'
 
 export default function Layout() {
   return (
     <div className="min-h-screen bg-background text-foreground flex">
+      {/* 网络状态提示 */}
+      <NetworkStatus />
+
+      {/* 全局 Toast 通知 */}
+      <ToastContainer />
+
       {/* 桌面端侧边栏 - 移动端隐藏 */}
       <div className="hidden md:block">
         <Sidebar />

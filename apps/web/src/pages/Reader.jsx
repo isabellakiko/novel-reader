@@ -469,7 +469,7 @@ export default function Reader() {
           </AnimatePresence>
 
           <div
-            className="mx-auto py-8 px-6"
+            className="mx-auto py-6 md:py-8 px-4 md:px-6"
             style={{ maxWidth: settings.maxWidth }}
           >
             {/* 章节标题 */}

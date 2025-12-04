@@ -56,10 +56,17 @@ echo "当前时间: $CURRENT_DATE $CURRENT_TIME"
 ### 2.2 场景性文档更新
 
 根据今天的工作内容，更新相关文档：
+
+**前端相关**：
 - Bug 修复 → troubleshooting.md
 - 新组件 → components.md
 - 新页面 → pages.md
 - 核心模块 → core/modules.md
+
+**后端相关**：
+- 新增/修改 API → backend/api.md
+- 数据库变更 → backend/database.md
+- 后端 Bug → troubleshooting.md（后端问题部分）
 
 ### 2.3 检查是否需要更新 CONTEXT.md
 

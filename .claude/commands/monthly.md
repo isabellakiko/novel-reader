@@ -66,23 +66,37 @@ find apps/ packages/ -name "*.js" -o -name "*.jsx" 2>/dev/null | xargs wc -l 2>/
 ### 3.1 文档清单检查
 
 检查以下文档是否存在且有效：
+
+**AI 上下文**：
 - [ ] docs/ai-context/CONTEXT.md
 - [ ] docs/ai-context/CURRENT.md
+
+**前端开发**：
 - [ ] docs/development/DEVELOPMENT.md
 - [ ] docs/development/web/components.md
 - [ ] docs/development/web/pages.md
 - [ ] docs/development/web/troubleshooting.md
 - [ ] docs/development/core/modules.md
+
+**后端开发**：
+- [ ] docs/development/backend/api.md
+- [ ] docs/development/backend/database.md
+
+**架构文档**：
 - [ ] docs/architecture/OVERVIEW.md
 - [ ] docs/architecture/tech-stack.md
 - [ ] docs/architecture/adr/README.md
+
+**项目文档**：
 - [ ] docs/project/vision.md
 - [ ] docs/project/design.md
 - [ ] docs/project/ROADMAP.md
 
 ### 3.2 tech-stack.md 版本检查
 
-对比 tech-stack.md 与 package.json：
+对比 tech-stack.md 与实际配置文件：
+- `apps/web/package.json` - 前端依赖版本
+- `apps/server/build.gradle` - 后端依赖版本
 - 检查版本是否一致
 - 标记需要更新的依赖
 
