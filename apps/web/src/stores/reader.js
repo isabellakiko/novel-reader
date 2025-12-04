@@ -19,6 +19,8 @@ export const useReaderStore = create(
 
       // 当前章节
       currentChapterIndex: 0,
+      // 滚动位置（百分比 0-100）
+      scrollPosition: 0,
 
       // 阅读设置
       settings: {
@@ -49,10 +51,12 @@ export const useReaderStore = create(
           // 获取阅读进度
           const progress = await progressStore.get(bookId)
           const chapterIndex = progress?.chapterIndex || 0
+          const scrollPosition = progress?.scrollPosition || 0
 
           set({
             book,
             currentChapterIndex: chapterIndex,
+            scrollPosition,
             isLoading: false,
           })
         } catch (error) {
@@ -76,6 +80,23 @@ export const useReaderStore = create(
         await progressStore.save(book.id, {
           chapterIndex: newIndex,
           scrollPosition: 0,
+        })
+      },
+
+      /**
+       * 保存滚动位置
+       * @param {number} scrollPercent - 滚动百分比 (0-100)
+       */
+      saveScrollPosition: async (scrollPercent) => {
+        const { book, currentChapterIndex } = get()
+        if (!book) return
+
+        set({ scrollPosition: scrollPercent })
+
+        // 保存到数据库
+        await progressStore.save(book.id, {
+          chapterIndex: currentChapterIndex,
+          scrollPosition: scrollPercent,
         })
       },
 

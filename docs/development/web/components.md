@@ -10,94 +10,204 @@
 
 ```
 src/components/
-├── ui/             # 基础 UI 组件
-├── reader/         # 阅读器组件
-├── search/         # 搜索组件
-└── bookshelf/      # 书架组件
+├── BookCard.jsx           # 3D 书籍卡片
+├── FileUpload.jsx         # 文件上传
+├── ThemeToggle.jsx        # 主题切换
+├── layout/
+│   ├── Layout.jsx         # 主布局
+│   └── Sidebar.jsx        # 侧边栏导航
+├── reader/
+│   ├── ChapterList.jsx    # 章节列表
+│   └── ReaderSettings.jsx # 阅读设置
+└── search/
+    ├── HighlightedText.jsx # 高亮文本
+    └── SearchResults.jsx   # 搜索结果
 ```
 
 ---
 
-## 基础 UI 组件 (ui/)
+## 已实现组件
 
-> 基于 Radix UI 封装的无样式可定制组件
+### BookCard ✅
 
-### Button（待开发）
+**位置**: `components/BookCard.jsx`
 
+**功能**:
+- 3D 悬浮效果（Framer Motion）
+- 书脊阴影和厚度效果
+- 8 种根据书名自动生成的配色方案
+- 阅读进度显示（章节/百分比/进度条）
+- 右键菜单（继续阅读、删除）
+
+**Props**:
 ```jsx
-// 用途：通用按钮组件
-// Props:
-//   - variant: 'primary' | 'secondary' | 'ghost'
-//   - size: 'sm' | 'md' | 'lg'
-//   - disabled: boolean
+{
+  book: {
+    id: string,
+    title: string,
+    author: string,
+    chapters: [],
+    metadata: { totalChapters, fileSize }
+  },
+  onDelete: (id) => void,
+  progress: { chapterIndex, scrollPosition } // 可选
+}
 ```
 
-### Modal（待开发）
+---
 
+### FileUpload ✅
+
+**位置**: `components/FileUpload.jsx`
+
+**功能**:
+- 拖拽上传区域
+- 点击选择文件
+- 支持 .txt 文件
+- 加载状态显示
+
+**Props**:
 ```jsx
-// 用途：弹窗组件，基于 Radix Dialog
-// Props:
-//   - open: boolean
-//   - onOpenChange: (open) => void
-//   - title: string
+{
+  onFileSelect: (file: File) => void,
+  isLoading: boolean,
+  className: string
+}
 ```
 
-### Slider（待开发）
+---
 
+### ThemeToggle ✅
+
+**位置**: `components/ThemeToggle.jsx`
+
+**功能**:
+- 3 种主题切换（白天/夜间/护眼）
+- 下拉菜单选择
+- 图标指示当前主题
+
+**Props**: 无（使用 Zustand store）
+
+---
+
+### Layout ✅
+
+**位置**: `components/layout/Layout.jsx`
+
+**功能**:
+- 全局布局容器
+- 包含 Sidebar + MainContent
+- React Router Outlet
+
+**Props**: 无
+
+---
+
+### Sidebar ✅
+
+**位置**: `components/layout/Sidebar.jsx`
+
+**功能**:
+- 导航链接（书架、阅读、搜索、书签、设置）
+- 响应式设计（移动端收缩）
+- 当前页面高亮指示
+- 底部主题切换 + 版本号
+
+**导航项**:
+| 路由 | 图标 | 标签 |
+|------|------|------|
+| /library | Library | 书架 |
+| /reader | BookOpen | 阅读 |
+| /search | Search | 搜索 |
+| /bookmarks | Bookmark | 书签 |
+| /settings | Settings | 设置 |
+
+---
+
+### ChapterList ✅
+
+**位置**: `components/reader/ChapterList.jsx`
+
+**功能**:
+- 章节目录侧边栏
+- 搜索过滤章节
+- 当前章节高亮
+- 点击跳转章节
+
+**Props**:
 ```jsx
-// 用途：滑块组件，用于字体大小等设置
-// Props:
-//   - value: number
-//   - onChange: (value) => void
-//   - min: number
-//   - max: number
+{
+  chapters: [{ title, start, end }],
+  currentIndex: number,
+  onSelect: (index) => void,
+  onClose: () => void,
+  searchQuery: string,
+  onSearchChange: (query) => void
+}
 ```
 
 ---
 
-## 阅读器组件 (reader/)
+### ReaderSettings ✅
 
-> 阅读器页面相关组件
+**位置**: `components/reader/ReaderSettings.jsx`
 
-### ReaderView（待开发）
-- 文本渲染区域
-- 支持虚拟滚动
+**功能**:
+- 字体大小调节（12-28px）
+- 行高调节（1.4-2.4）
+- 内容宽度调节（600-1200px）
+- 字体选择（衬线/无衬线）
 
-### ChapterNav（待开发）
-- 章节导航侧边栏
-- 目录树展示
-
-### SettingsPanel（待开发）
-- 字体设置面板
-- 主题切换
-
----
-
-## 搜索组件 (search/)
-
-> 全局搜索相关组件
-
-### SearchInput（待开发）
-- 搜索输入框
-- 支持正则切换
-
-### SearchResults（待开发）
-- 搜索结果列表
-- 按章节分组展示
+**Props**:
+```jsx
+{
+  settings: { fontSize, lineHeight, maxWidth, fontFamily },
+  onUpdate: (updates) => void,
+  onClose: () => void
+}
+```
 
 ---
 
-## 书架组件 (bookshelf/)
+### HighlightedText ✅
 
-> 书架页面相关组件
+**位置**: `components/search/HighlightedText.jsx`
 
-### BookCard（待开发）
-- 书籍卡片
-- 显示封面、进度
+**功能**:
+- 高亮显示搜索关键词
+- 支持 CJK 字符
+- 导出 HighlightQuery 组件
 
-### BookUploader（待开发）
-- 文件上传组件
-- 支持拖拽
+**导出**:
+```jsx
+// 高亮文本片段
+export function HighlightedText({ text, highlights })
+
+// 按关键词高亮
+export function HighlightQuery({ text, query })
+```
+
+---
+
+### SearchResults ✅
+
+**位置**: `components/search/SearchResults.jsx`
+
+**功能**:
+- 4 种搜索模式渲染
+  - **概览模式**: 每章显示 1 条匹配
+  - **详细模式**: 按章节分组，可折叠
+  - **频率模式**: 按出现次数排序，带进度条
+  - **时间线模式**: 按顺序平铺显示
+
+**Props**:
+```jsx
+{
+  results: SearchResult[],
+  searchMode: 'overview' | 'detailed' | 'frequency' | 'timeline',
+  onJumpToResult: (result) => void
+}
+```
 
 ---
 
@@ -105,11 +215,9 @@ src/components/
 
 ### 文件结构
 
+单文件组件（当前使用）:
 ```
-components/ui/Button/
-├── Button.jsx      # 组件实现
-├── Button.test.jsx # 测试（可选）
-└── index.js        # 导出
+components/ComponentName.jsx
 ```
 
 ### 必须包含
@@ -118,42 +226,35 @@ components/ui/Button/
 2. **默认 Props**
 3. **className 支持**（可合并外部样式）
 
+### 样式规范
+
+- 使用 Tailwind CSS
+- 使用 `cn()` 合并 class（来自 `lib/utils.js`）
+- 动画使用 Framer Motion
+
 ### 示例
 
 ```jsx
+import { motion } from 'framer-motion'
+import { cn } from '../lib/utils'
+
 /**
- * Button 组件
+ * 组件描述
  * @param {Object} props
- * @param {'primary'|'secondary'|'ghost'} props.variant - 按钮样式
- * @param {'sm'|'md'|'lg'} props.size - 按钮大小
- * @param {boolean} props.disabled - 是否禁用
- * @param {string} props.className - 额外样式类
- * @param {React.ReactNode} props.children - 子元素
+ * @param {string} props.className - 额外样式
  */
-function Button({
-  variant = 'primary',
-  size = 'md',
-  disabled = false,
-  className,
-  children,
-  ...props
-}) {
+function ComponentName({ className, ...props }) {
   return (
-    <button
-      className={cn(
-        'rounded-lg font-medium transition-colors',
-        variants[variant],
-        sizes[size],
-        disabled && 'opacity-50 cursor-not-allowed',
-        className
-      )}
-      disabled={disabled}
+    <motion.div
+      className={cn('base-styles', className)}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       {...props}
-    >
-      {children}
-    </button>
+    />
   )
 }
+
+export default ComponentName
 ```
 
 ---
@@ -162,4 +263,6 @@ function Button({
 
 | 日期 | 组件 | 变更 |
 |------|------|------|
-| 2025-12-02 | - | 初始化文档结构 |
+| 2025-12-02 | 全部 | 文档全面更新，反映实际实现 |
+| 2025-12-02 | BookCard | 添加进度显示功能 |
+| 2025-12-02 | SearchResults | 4 种搜索模式 |

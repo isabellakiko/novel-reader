@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Search, Plus, BookOpen, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLibraryStore } from '../stores/library'
+import { progressStore } from '../stores/db'
 import FileUpload from '../components/FileUpload'
 import BookCard from '../components/BookCard'
 import { cn } from '../lib/utils'
@@ -24,10 +25,12 @@ export default function Library() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [showUpload, setShowUpload] = useState(false)
+  const [readingProgress, setReadingProgress] = useState({})
 
-  // 加载书籍列表
+  // 加载书籍列表和阅读进度
   useEffect(() => {
     loadBooks()
+    progressStore.getAll().then(setReadingProgress)
   }, [loadBooks])
 
   // 过滤书籍
@@ -205,7 +208,12 @@ export default function Library() {
           >
             <AnimatePresence mode="popLayout">
               {filteredBooks.map((book) => (
-                <BookCard key={book.id} book={book} onDelete={handleDelete} />
+                <BookCard
+                  key={book.id}
+                  book={book}
+                  onDelete={handleDelete}
+                  progress={readingProgress[book.id]}
+                />
               ))}
             </AnimatePresence>
           </motion.div>

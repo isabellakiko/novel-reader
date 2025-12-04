@@ -4,7 +4,7 @@
 
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import Layout from './components/layout/Layout'
-import { Library, Reader, Search, Settings } from './pages'
+import { Library, Reader, Search, Bookmarks, Settings } from './pages'
 
 export const router = createBrowserRouter([
   {
@@ -26,6 +26,10 @@ export const router = createBrowserRouter([
       {
         path: 'search',
         element: <Search />,
+      },
+      {
+        path: 'bookmarks',
+        element: <Bookmarks />,
       },
       {
         path: 'settings',

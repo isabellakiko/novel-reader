@@ -32,6 +32,18 @@ db.version(2).stores({
   bookContents: 'bookId',
 })
 
+// 版本3: 添加书签表
+db.version(3).stores({
+  books: 'id, title, author, importedAt',
+  readingProgress: 'bookId',
+  bookContents: 'bookId',
+  // 书签表
+  // id: 主键（自增）
+  // bookId: 书籍ID（可查询）
+  // createdAt: 创建时间（可排序）
+  bookmarks: '++id, bookId, createdAt',
+})
+
 /**
  * 书籍存储操作
  */
@@ -175,10 +187,107 @@ export const progressStore = {
   },
 
   /**
+   * 获取所有阅读进度
+   * @returns {Promise<Object>} - 以 bookId 为键的进度对象
+   */
+  async getAll() {
+    const progressList = await db.readingProgress.toArray()
+    const progressMap = {}
+    for (const progress of progressList) {
+      progressMap[progress.bookId] = progress
+    }
+    return progressMap
+  },
+
+  /**
    * 删除阅读进度
    * @param {string} bookId
    */
   async delete(bookId) {
     await db.readingProgress.delete(bookId)
+  },
+}
+
+/**
+ * 书签存储操作
+ */
+export const bookmarksStore = {
+  /**
+   * 添加书签
+   * @param {Object} bookmark
+   * @param {string} bookmark.bookId - 书籍ID
+   * @param {number} bookmark.chapterIndex - 章节索引
+   * @param {string} bookmark.chapterTitle - 章节标题
+   * @param {number} bookmark.position - 文本位置
+   * @param {string} bookmark.excerpt - 摘录文本（用于预览）
+   * @param {string} [bookmark.note] - 备注
+   */
+  async add(bookmark) {
+    const id = await db.bookmarks.add({
+      ...bookmark,
+      createdAt: new Date(),
+    })
+    return id
+  },
+
+  /**
+   * 获取书籍的所有书签
+   * @param {string} bookId
+   */
+  async getByBookId(bookId) {
+    return db.bookmarks
+      .where('bookId')
+      .equals(bookId)
+      .reverse()
+      .sortBy('createdAt')
+  },
+
+  /**
+   * 获取所有书签（按时间倒序）
+   */
+  async getAll() {
+    return db.bookmarks.orderBy('createdAt').reverse().toArray()
+  },
+
+  /**
+   * 删除书签
+   * @param {number} id
+   */
+  async delete(id) {
+    await db.bookmarks.delete(id)
+  },
+
+  /**
+   * 删除书籍的所有书签
+   * @param {string} bookId
+   */
+  async deleteByBookId(bookId) {
+    await db.bookmarks.where('bookId').equals(bookId).delete()
+  },
+
+  /**
+   * 更新书签备注
+   * @param {number} id
+   * @param {string} note
+   */
+  async updateNote(id, note) {
+    await db.bookmarks.update(id, { note })
+  },
+
+  /**
+   * 检查是否已有相同位置的书签
+   * @param {string} bookId
+   * @param {number} chapterIndex
+   * @param {number} position
+   */
+  async exists(bookId, chapterIndex, position) {
+    const bookmark = await db.bookmarks
+      .where('bookId')
+      .equals(bookId)
+      .filter(
+        (b) => b.chapterIndex === chapterIndex && b.position === position
+      )
+      .first()
+    return bookmark || null
   },
 }

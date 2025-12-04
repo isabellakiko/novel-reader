@@ -16,6 +16,12 @@
 | React DOM | ^18.3.1 | React 渲染器 |
 | Vite | ^5.4.10 | 构建工具 |
 
+### 路由
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| react-router-dom | ^7.9.6 | 前端路由 |
+
 ### 样式
 
 | 技术 | 版本 | 说明 |
@@ -30,6 +36,7 @@
 
 | 技术 | 版本 | 说明 |
 |------|------|------|
+| @radix-ui/react-collapsible | ^1.1.1 | 折叠面板 |
 | @radix-ui/react-dialog | ^1.1.2 | 弹窗 |
 | @radix-ui/react-dropdown-menu | ^2.1.2 | 下拉菜单 |
 | @radix-ui/react-scroll-area | ^1.2.0 | 滚动区域 |
@@ -52,6 +59,12 @@
 | Zustand | ^5.0.1 | 状态管理 |
 | Dexie | ^4.0.9 | IndexedDB 封装 |
 
+### 虚拟滚动
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| react-window | ^1.8.10 | 虚拟滚动列表 |
+
 ### 开发工具
 
 | 技术 | 版本 | 说明 |
@@ -66,13 +79,19 @@
 
 ### @novel-reader/core
 
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| jschardet | 待安装 | 编码检测 |
+核心解析和搜索逻辑，无外部依赖。
+
+| 模块 | 说明 |
+|------|------|
+| parser/encoding.js | 编码检测（GBK/UTF-8/Big5） |
+| parser/txt-parser.js | TXT 文件解析 |
+| parser/chapter-detector.js | 章节识别 |
+| search/search-engine.js | 搜索算法 |
+| types/book.js | 数据类型定义 |
 
 ### @novel-reader/shared
 
-（暂无额外依赖）
+共享工具和常量（暂无额外依赖）。
 
 ---
 
@@ -108,6 +127,9 @@
       '@shared': '../../packages/shared/src',
     },
   },
+  worker: {
+    format: 'es',
+  },
 }
 ```
 
@@ -118,7 +140,29 @@
 {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['Noto Serif SC', 'Georgia', 'serif'],
+      },
+    },
+  },
 }
+```
+
+---
+
+## IndexedDB Schema (Dexie v3)
+
+```javascript
+// stores/db.js
+db.version(3).stores({
+  books: 'id, title, author, importedAt',
+  readingProgress: 'bookId',
+  bookContents: 'bookId',
+  bookmarks: '++id, bookId, createdAt',
+})
 ```
 
 ---
@@ -127,4 +171,7 @@
 
 | 日期 | 变更 |
 |------|------|
+| 2025-12-02 | 添加 react-router-dom, react-window |
+| 2025-12-02 | 添加 @radix-ui/react-collapsible |
+| 2025-12-02 | 更新 IndexedDB Schema (v3) |
 | 2025-12-02 | 初始化技术栈 |

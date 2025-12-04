@@ -3,7 +3,7 @@
  */
 
 import { NavLink } from 'react-router-dom'
-import { Library, BookOpen, Search, Settings } from 'lucide-react'
+import { Library, BookOpen, Search, Bookmark, Settings } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '../../lib/utils'
 import ThemeToggle from '../ThemeToggle'
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/library', icon: Library, label: '书架' },
   { to: '/reader', icon: BookOpen, label: '阅读' },
   { to: '/search', icon: Search, label: '搜索' },
+  { to: '/bookmarks', icon: Bookmark, label: '书签' },
   { to: '/settings', icon: Settings, label: '设置' },
 ]
 

@@ -39,9 +39,8 @@ echo "当前时间: $CURRENT_DATE $CURRENT_TIME ($DAY_NAME)"
 ## Step 2: 更新 CURRENT.md
 
 ### 2.1 读取 CURRENT.md
-```bash
-cat docs/ai-context/CURRENT.md
-```
+
+使用 Read 工具读取 `docs/ai-context/CURRENT.md` 文件内容。
 
 ### 2.2 判断是否需要新增 Day 条目
 

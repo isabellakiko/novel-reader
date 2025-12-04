@@ -41,10 +41,17 @@ function generateCoverTheme(title) {
   return themes[Math.abs(hash) % themes.length]
 }
 
-export default function BookCard({ book, onDelete }) {
+export default function BookCard({ book, onDelete, progress }) {
   const navigate = useNavigate()
   const theme = generateCoverTheme(book.title)
   const totalChapters = book.metadata?.totalChapters || book.chapters?.length || 0
+
+  // 计算阅读进度
+  const currentChapter = progress?.chapterIndex ?? -1
+  const hasProgress = currentChapter >= 0
+  const progressPercent = hasProgress && totalChapters > 0
+    ? Math.round(((currentChapter + 1) / totalChapters) * 100)
+    : 0
 
   const handleClick = () => {
     navigate(`/reader/${book.id}`)
@@ -123,13 +130,36 @@ export default function BookCard({ book, onDelete }) {
               </p>
 
               {/* 底部信息 */}
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
-                <span className="text-white/50 text-xs">
-                  {totalChapters} 章
-                </span>
-                <span className="text-white/50 text-xs">
-                  {formatFileSize(book.metadata?.fileSize)}
-                </span>
+              <div className="mt-3 pt-3 border-t border-white/10">
+                {hasProgress ? (
+                  <>
+                    {/* 进度文字 */}
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="text-white/70">
+                        第 {currentChapter + 1}/{totalChapters} 章
+                      </span>
+                      <span className="text-white/50">
+                        {progressPercent}%
+                      </span>
+                    </div>
+                    {/* 进度条 */}
+                    <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-full transition-all', theme.accent)}
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/50 text-xs">
+                      {totalChapters} 章
+                    </span>
+                    <span className="text-white/50 text-xs">
+                      {formatFileSize(book.metadata?.fileSize)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* 装饰图案 */}
@@ -209,7 +239,7 @@ export default function BookCard({ book, onDelete }) {
               onClick={handleClick}
             >
               <BookOpen className="w-4 h-4" />
-              开始阅读
+              {hasProgress ? '继续阅读' : '开始阅读'}
             </DropdownMenu.Item>
 
             <DropdownMenu.Separator className="h-px bg-border my-1" />

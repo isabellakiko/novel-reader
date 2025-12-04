@@ -12,9 +12,12 @@ import {
   Home,
   Loader2,
   X,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useReaderStore } from '../stores/reader'
+import { useBookmarkStore } from '../stores/bookmark'
 import ChapterList from '../components/reader/ChapterList'
 import ReaderSettings from '../components/reader/ReaderSettings'
 import { HighlightQuery } from '../components/search/HighlightedText'
@@ -31,19 +34,29 @@ export default function Reader() {
     isLoading,
     error,
     currentChapterIndex,
+    scrollPosition,
     settings,
     loadBook,
     goToChapter,
     prevChapter,
     nextChapter,
     updateSettings,
+    saveScrollPosition,
     clearBook,
   } = useReaderStore()
+
+  const {
+    bookmarks,
+    loadBookmarks,
+    addBookmark,
+    getChapterBookmarks,
+  } = useBookmarkStore()
 
   // UI 状态
   const [showChapterList, setShowChapterList] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [chapterSearch, setChapterSearch] = useState('')
+  const [bookmarkToast, setBookmarkToast] = useState(null)
 
   // 从 URL 获取高亮关键词和位置
   const highlightQuery = searchParams.get('highlight')
@@ -60,9 +73,10 @@ export default function Reader() {
   useEffect(() => {
     if (bookId) {
       loadBook(bookId)
+      loadBookmarks(bookId)
     }
     return () => clearBook()
-  }, [bookId, loadBook, clearBook])
+  }, [bookId, loadBook, loadBookmarks, clearBook])
 
   // 获取当前章节内容（需要在其他依赖它的 hooks 之前定义）
   const currentChapter = useMemo(() => {
@@ -78,6 +92,37 @@ export default function Reader() {
       lines,
     }
   }, [book, currentChapterIndex])
+
+  // 当前章节是否有书签
+  const chapterBookmarks = useMemo(() => {
+    return getChapterBookmarks(currentChapterIndex)
+  }, [getChapterBookmarks, currentChapterIndex, bookmarks])
+
+  // 添加书签
+  const handleAddBookmark = useCallback(async () => {
+    if (!book || !currentChapter) return
+
+    const chapter = book.chapters[currentChapterIndex]
+    const excerpt = currentChapter.lines.slice(0, 2).join(' ').slice(0, 100) + '...'
+
+    const result = await addBookmark({
+      bookId: book.id,
+      bookTitle: book.title,
+      chapterIndex: currentChapterIndex,
+      chapterTitle: currentChapter.title,
+      position: chapter.start,
+      excerpt,
+    })
+
+    if (result.success) {
+      setBookmarkToast({ type: 'success', message: '书签已添加' })
+    } else {
+      setBookmarkToast({ type: 'info', message: result.message })
+    }
+
+    // 3秒后隐藏提示
+    setTimeout(() => setBookmarkToast(null), 3000)
+  }, [book, currentChapter, currentChapterIndex, addBookmark])
 
   // 处理 URL 中的章节跳转参数
   useEffect(() => {
@@ -95,19 +140,76 @@ export default function Reader() {
     }
   }, [book, searchParams, goToChapter, currentChapterIndex, setSearchParams])
 
-  // 章节切换后滚动到顶部
+  // 用于追踪是否是初次加载（需要恢复滚动位置）
+  const isInitialLoadRef = useRef(true)
+  const scrollSaveTimerRef = useRef(null)
+
+  // 章节切换后滚动到顶部或恢复位置
   useEffect(() => {
     // 如果有高亮关键词，让下面的 effect 处理滚动到高亮位置
     if (highlightQuery) return
 
-    // 滚动到顶部
     if (contentRef.current) {
-      contentRef.current.scrollTo({
-        top: 0,
-        behavior: 'instant',
-      })
+      // 初次加载时恢复之前的滚动位置
+      if (isInitialLoadRef.current && scrollPosition > 0) {
+        const scrollHeight = contentRef.current.scrollHeight
+        const clientHeight = contentRef.current.clientHeight
+        const maxScroll = scrollHeight - clientHeight
+        const targetScroll = (scrollPosition / 100) * maxScroll
+
+        // 延迟执行确保内容已渲染
+        setTimeout(() => {
+          contentRef.current?.scrollTo({
+            top: targetScroll,
+            behavior: 'instant',
+          })
+        }, 100)
+
+        isInitialLoadRef.current = false
+      } else {
+        // 非初次加载（切换章节），滚动到顶部
+        contentRef.current.scrollTo({
+          top: 0,
+          behavior: 'instant',
+        })
+      }
     }
-  }, [currentChapterIndex, highlightQuery])
+  }, [currentChapterIndex, highlightQuery, scrollPosition])
+
+  // 滚动时保存进度（防抖）
+  useEffect(() => {
+    const container = contentRef.current
+    if (!container || !book) return
+
+    const handleScroll = () => {
+      // 清除之前的定时器
+      if (scrollSaveTimerRef.current) {
+        clearTimeout(scrollSaveTimerRef.current)
+      }
+
+      // 1秒后保存（防抖）
+      scrollSaveTimerRef.current = setTimeout(() => {
+        const scrollTop = container.scrollTop
+        const scrollHeight = container.scrollHeight
+        const clientHeight = container.clientHeight
+        const maxScroll = scrollHeight - clientHeight
+
+        if (maxScroll > 0) {
+          const percent = Math.round((scrollTop / maxScroll) * 100)
+          saveScrollPosition(percent)
+        }
+      }, 1000)
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      if (scrollSaveTimerRef.current) {
+        clearTimeout(scrollSaveTimerRef.current)
+      }
+    }
+  }, [book, saveScrollPosition])
 
   // 从搜索结果跳转后，滚动到第一个高亮位置
   useEffect(() => {
@@ -258,6 +360,22 @@ export default function Reader() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleAddBookmark}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                chapterBookmarks.length > 0
+                  ? 'text-primary bg-primary/10'
+                  : 'hover:bg-accent'
+              )}
+              title={chapterBookmarks.length > 0 ? '本章已有书签' : '添加书签'}
+            >
+              {chapterBookmarks.length > 0 ? (
+                <BookmarkCheck className="w-5 h-5" />
+              ) : (
+                <Bookmark className="w-5 h-5" />
+              )}
+            </button>
+            <button
               onClick={() => setShowSettings(!showSettings)}
               className={cn(
                 'p-2 rounded-lg transition-colors',
@@ -269,6 +387,25 @@ export default function Reader() {
             </button>
           </div>
         </header>
+
+        {/* 书签提示 */}
+        <AnimatePresence>
+          {bookmarkToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className={cn(
+                'absolute top-14 right-4 px-4 py-2 rounded-lg shadow-lg z-20',
+                bookmarkToast.type === 'success'
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'
+              )}
+            >
+              {bookmarkToast.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* 阅读内容区 */}
         <main className="flex-1 overflow-auto" ref={contentRef}>
