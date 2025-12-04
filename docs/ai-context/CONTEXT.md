@@ -26,8 +26,8 @@
 - 用户认证（JWT 登录/注册）
 - 精美现代的 UI（3D 书籍卡片、Framer Motion 动画）
 
-**开发进度**: Phase 5 全部完成 ✅ 1.0 版本发布
-**下一步**: 可选扩展（导出功能、EPUB/PDF 支持）
+**开发进度**: 1.0 版本已发布
+**可选扩展**: 导出功能、EPUB/PDF 支持
 
 ---
 
@@ -48,92 +48,6 @@
 
 ---
 
-## 当前开发状态
-
-### ✅ 已完成
-
-**Phase 1: 基础搭建**
-- Monorepo 结构（pnpm workspace）
-- Vite + React + 依赖配置
-- AI 协作系统（4 层文档 + 6 个 Slash Commands）
-
-**Phase 2: 核心解析模块**
-- 编码检测（GBK/UTF-8/Big5 等）
-- TXT 解析器（32MB 文件 <100ms）
-- 章节识别（10+ 种格式）
-- 搜索引擎（4 种模式）
-
-**Phase 3: 前端功能**
-- 书架页面（3D 卡片、导入、删除、进度显示）
-- 阅读器页面（章节导航、设置、书签、快捷键）
-- 全局搜索（Web Worker、高亮跳转）
-- 书签管理页面
-- 主题系统（自动/白天/夜间/护眼）
-
-**Phase 4: 后端 + 前后端对接**
-- Spring Boot 3 后端项目初始化
-- 用户认证模块（JWT + BCrypt）
-- 书籍管理模块（上传、解析、CRUD）
-- 阅读进度同步模块
-- 书签同步模块
-- 前端 API 服务层（Axios）
-- Auth Store + Sync Store
-- 登录/注册页面
-- 本地/云端双模式书架
-- 离线检测与提示
-- 同步冲突处理
-- 全局 Toast 错误处理
-
-**Phase 5: 优化完善（全部完成）**
-- 阅读设置增强（8种背景色、4种字体）
-- 深色模式优化（系统跟随、过渡动画）
-- 空状态设计（精美动画插画）
-- 动画细节打磨（统一动画库）
-- 构建产物代码分割（4个 vendor chunks）
-- 路由懒加载（7个页面独立 chunk）
-- 空闲时预加载核心页面
-- 阅读统计功能（已内置）
-
-### 📋 可选扩展
-
-- 导出功能
-- EPUB/PDF 支持
-
----
-
-## 技术栈
-
-### 前端（apps/web）
-- **框架**: React 18.3.1
-- **构建**: Vite 5.4.10
-- **语言**: JavaScript（不用 TypeScript）
-- **样式**: Tailwind CSS v3
-- **动画**: Framer Motion 11
-- **图标**: Lucide React
-- **UI 组件**: Radix UI
-- **状态管理**: Zustand 5
-- **本地存储**: Dexie 4 (IndexedDB)
-- **HTTP 客户端**: Axios
-- **路由**: React Router 7
-- **后台任务**: Web Worker
-
-### 后端（apps/server）
-- **框架**: Spring Boot 3.4.5
-- **语言**: Java 21
-- **安全**: Spring Security + JWT (JJWT 0.12.6)
-- **数据库**: PostgreSQL (生产) / H2 (开发)
-- **ORM**: Spring Data JPA + Hibernate
-- **迁移**: Flyway
-- **密码**: BCrypt
-- **API 文档**: SpringDoc OpenAPI (Swagger)
-- **工具**: Lombok, MapStruct
-
-### 共享包
-- **@novel-reader/core**: 核心逻辑（解析、搜索）
-- **@novel-reader/shared**: 共享工具和常量
-
----
-
 ## 目录结构
 
 ```
@@ -141,82 +55,112 @@ novel-reader/
 ├── apps/
 │   ├── web/                # React 前端应用
 │   │   └── src/
-│   │       ├── components/ # 12+ 组件
+│   │       ├── components/ # 15+ 组件
 │   │       ├── pages/      # 7 个页面
-│   │       ├── stores/     # 9 个状态存储
+│   │       ├── stores/     # 10 个状态存储
 │   │       ├── services/   # API 服务层
+│   │       ├── lib/        # 工具库
 │   │       └── workers/    # Web Worker
 │   └── server/             # Spring Boot 后端
 │       └── src/main/java/com/novelreader/
 │           ├── controller/ # 4 个控制器
-│           ├── service/    # 3 个服务
-│           ├── entity/     # 6 个实体
+│           ├── service/    # 4 个服务
+│           ├── entity/     # 5 个实体
 │           ├── repository/ # 5 个仓库
 │           ├── security/   # JWT 认证
 │           └── config/     # 配置类
 ├── packages/
 │   ├── core/               # 核心逻辑（解析、搜索）
 │   └── shared/             # 共享工具
-├── docs/
-│   ├── ai-context/         # AI 记忆层
-│   ├── development/        # 开发文档
-│   ├── architecture/       # 架构文档
-│   └── project/            # 项目文档
+├── docs/                   # 文档
 └── .claude/commands/       # Slash Commands
 ```
 
 ---
 
-## API 端点概览
+## 核心模块速览
 
-### 认证 API (`/api/auth`)
-| 方法 | 端点 | 说明 |
-|------|------|------|
-| POST | /register | 用户注册 |
-| POST | /login | 用户登录 |
-| GET | /me | 获取当前用户 |
+### 前端 Stores（apps/web/src/stores/）
 
-### 书籍 API (`/api/books`)
-| 方法 | 端点 | 说明 |
-|------|------|------|
-| POST | /upload | 上传书籍 |
-| GET | / | 获取书籍列表 |
-| GET | /{id} | 获取书籍详情 |
-| GET | /{id}/chapters/{index} | 获取章节内容 |
-| DELETE | /{id} | 删除书籍 |
-| GET | /search | 搜索书籍 |
+| Store | 文件 | 职责 |
+|-------|------|------|
+| library | library.js | 书架管理、导入书籍 |
+| reader | reader.js | 阅读器状态、设置 |
+| bookmark | bookmark.js | 书签 CRUD |
+| search | search.js | 搜索状态、Worker 通信 |
+| theme | theme.js | 主题切换（auto/light/dark） |
+| auth | auth.js | 用户认证、Token 管理 |
+| sync | sync.js | 云端同步 |
+| stats | stats.js | 阅读统计 |
+| toast | toast.js | 全局提示 |
+| db | db.js | IndexedDB Schema |
 
-### 进度 API (`/api/progress`)
-| 方法 | 端点 | 说明 |
-|------|------|------|
-| POST | / | 更新阅读进度 |
-| GET | /book/{id} | 获取书籍进度 |
-| GET | / | 获取所有进度 |
-| GET | /recent | 获取最近阅读 |
+### 前端页面（apps/web/src/pages/）
 
-### 书签 API (`/api/progress/bookmarks`)
-| 方法 | 端点 | 说明 |
+| 页面 | 路由 | 功能 |
 |------|------|------|
-| POST | / | 创建书签 |
-| GET | /book/{id} | 获取书籍书签 |
-| GET | / | 获取所有书签 |
-| DELETE | /{id} | 删除书签 |
+| Library | /library | 书架、导入、进度显示 |
+| Reader | /reader/:bookId | 阅读、章节导航、设置 |
+| Search | /search | 全局搜索、4 种模式 |
+| Bookmarks | /bookmarks | 书签管理 |
+| Settings | /settings | 设置、统计 |
+| Login | /login | 登录 |
+| Register | /register | 注册 |
+
+### 后端控制器（apps/server/.../controller/）
+
+| 控制器 | 路径 | 职责 |
+|--------|------|------|
+| AuthController | /api/auth | 登录、注册、用户信息 |
+| BookController | /api/books | 书籍 CRUD、上传 |
+| ProgressController | /api/progress | 阅读进度同步 |
+| BookmarkController | /api/progress/bookmarks | 书签 CRUD |
+
+### 核心包模块（packages/core/src/）
+
+| 模块 | 文件 | 功能 |
+|------|------|------|
+| 编码检测 | parser/encoding.js | GBK/UTF-8/Big5 检测转换 |
+| TXT 解析 | parser/txt-parser.js | 完整解析流程 |
+| 章节识别 | parser/chapter-detector.js | 10+ 格式支持 |
+| 搜索引擎 | search/search-engine.js | 4 种搜索模式 |
 
 ---
 
-## 项目状态
+## 已完成功能
 
-### 1.0 版本已完成 🎉
+### Phase 1-2: 基础 + 核心解析 ✅
+- Monorepo 结构（pnpm workspace）
+- TXT 多编码支持（32MB <100ms）
+- 章节自动识别（10+ 格式）
 
-所有计划功能均已完成：
-- 全栈小说阅读器
-- 本地 + 云端双模式存储
-- 精美的 UI 和流畅的动画
-- 性能优化（代码分割、懒加载）
+### Phase 3: 前端功能 ✅
+- 书架页面（3D 卡片、导入、删除、进度显示）
+- 阅读器页面（章节导航、设置、书签、快捷键）
+- 全局搜索（Web Worker、4 种模式、高亮跳转）
+- 书签管理页面
+- 主题系统（自动/白天/夜间）
 
-### 可选扩展
-1. 导出功能
-2. EPUB/PDF 支持
+### Phase 4: 后端 + 前后端对接 ✅
+- Spring Boot 3 后端
+- JWT 认证（24h 过期）
+- 书籍/进度/书签同步 API
+- 前端 API 服务层
+- 登录/注册页面
+- 离线检测与提示
+
+### Phase 5: 优化完善 ✅
+- 阅读设置增强（8 种背景色、4 种字体）
+- 深色模式优化（系统跟随、过渡动画）
+- 空状态设计（EmptyState 组件）
+- 动画细节打磨（统一动画库）
+- 代码分割（4 个 vendor chunks）
+- 路由懒加载（7 个页面）
+- 空闲时预加载
+
+### 可选扩展（未实现）
+- 导出功能
+- EPUB/PDF 支持
 
 ---
 
@@ -244,12 +188,22 @@ scope: web | server | core | shared | docs
 
 ## 快速导航
 
-- [当前进度](CURRENT.md)
+### 深入了解
+- [当前进度](CURRENT.md) - 本周开发日志
+- [架构总览](../architecture/OVERVIEW.md) - 系统架构
+- [技术栈详情](../architecture/tech-stack.md) - 完整依赖列表
+- [开发路线图](../project/ROADMAP.md) - 阶段规划
+
+### 开发文档
+- [前端组件](../development/web/components.md)
+- [前端页面](../development/web/pages.md)
+- [后端 API](../development/backend/api.md)
+- [数据库设计](../development/backend/database.md)
 - [开发规范](../development/DEVELOPMENT.md)
-- [架构总览](../architecture/OVERVIEW.md)
-- [技术栈详情](../architecture/tech-stack.md)
-- [后端 API 文档](../development/backend/api.md)
+
+### 项目文档
 - [项目愿景](../project/vision.md)
+- [功能设计](../project/design.md)
 
 ---
 
@@ -258,11 +212,12 @@ scope: web | server | core | shared | docs
 ```bash
 /start              # 快速启动（默认）
 /start --full       # 完整启动（首次使用）
-/start --component  # 组件开发模式
+/start --web        # 前端开发模式
 /start --api        # 后端 API 开发模式
+/start --core       # 核心模块开发模式
 ```
 
 ---
 
-**Token 效率**: ~3000 tokens
+**Token 效率**: ~2500 tokens
 **更新频率**: 每周或重大变更时
