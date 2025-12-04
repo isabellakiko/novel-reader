@@ -1,7 +1,7 @@
 ---
 description: 项目健康检查，代码质量、依赖、文档同步
 argument-hint: [--quick | --full | --security | --docs]
-allowed-tools: Read, Glob, Grep, Bash(date), Bash(git status), Bash(git log), Bash(tree), Bash(find), Bash(wc), Bash(pnpm list), Bash(pnpm outdated), Bash(pnpm audit), Bash(./gradlew)
+allowed-tools: Read, Glob, Grep, Bash(date), Bash(git status), Bash(git log), Bash(tree), Bash(find), Bash(wc), Bash(pnpm list), Bash(pnpm outdated), Bash(pnpm audit), Bash(./mvnw)
 ---
 
 <task>
@@ -97,7 +97,7 @@ cd apps/web && pnpm build --mode development 2>&1 | tail -10
 
 echo ""
 echo "=== 后端编译检查 ==="
-cd apps/server && ./gradlew compileJava 2>&1 | tail -10
+cd apps/server && ./mvnw compile 2>&1 | tail -10
 ```
 
 ---
@@ -119,7 +119,7 @@ cd apps/web && pnpm audit 2>&1 || true
 
 读取以下文件对比版本：
 - `apps/web/package.json`
-- `apps/server/build.gradle.kts`
+- `apps/server/pom.xml`
 - `docs/architecture/tech-stack.md`
 
 检查项：
@@ -137,7 +137,7 @@ cd apps/web && pnpm audit 2>&1 || true
 
 **CONTEXT.md 检查项**：
 - [ ] 项目阶段是否与 ROADMAP.md 一致？
-- [ ] 技术栈描述是否与 package.json/build.gradle 一致？
+- [ ] 技术栈描述是否与 package.json/pom.xml 一致？
 - [ ] 目录结构是否与实际一致？
 - [ ] 核心模块列表是否完整？
 

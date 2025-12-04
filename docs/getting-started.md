@@ -20,7 +20,7 @@
 | 工具 | 版本要求 | 检查命令 |
 |------|----------|----------|
 | Java | 21 | `java -version` |
-| Gradle | 8.12+ | `./gradlew --version` |
+| Maven | 3.9+ | `./mvnw --version`（自动下载） |
 
 ### 可选
 
@@ -50,10 +50,10 @@ pnpm install
 
 ```bash
 cd apps/server
-./gradlew build
+./mvnw clean compile
 ```
 
-首次运行会自动下载 Gradle 和依赖，可能需要几分钟。
+首次运行会自动下载 Maven 和依赖，可能需要几分钟。
 
 ---
 
@@ -77,7 +77,7 @@ pnpm --filter web dev
 **终端 1 - 启动后端**：
 ```bash
 cd apps/server
-./gradlew bootRun
+./mvnw spring-boot:run
 ```
 
 等待看到：
@@ -137,11 +137,11 @@ pkill -f "novel-reader-server"
 
 | 命令 | 说明 |
 |------|------|
-| `./gradlew bootRun` | 启动开发服务器 |
-| `./gradlew build` | 构建 JAR 包 |
-| `./gradlew test` | 运行测试 |
-| `./gradlew clean` | 清理构建产物 |
-| `./gradlew flywayMigrate` | 运行数据库迁移 |
+| `./mvnw spring-boot:run` | 启动开发服务器 |
+| `./mvnw package` | 构建 JAR 包 |
+| `./mvnw test` | 运行测试 |
+| `./mvnw clean` | 清理构建产物 |
+| `./mvnw flyway:migrate` | 运行数据库迁移 |
 
 ### Monorepo
 
@@ -191,18 +191,21 @@ lsof -i :8080  # 后端
 kill -9 <PID>
 ```
 
-### Gradle 下载慢
+### Maven 下载慢
 
-配置国内镜像，编辑 `~/.gradle/init.gradle`：
+配置国内镜像，编辑 `~/.m2/settings.xml`：
 
-```groovy
-allprojects {
-    repositories {
-        maven { url 'https://maven.aliyun.com/repository/public' }
-        maven { url 'https://maven.aliyun.com/repository/spring' }
-        mavenCentral()
-    }
-}
+```xml
+<settings>
+  <mirrors>
+    <mirror>
+      <id>aliyun</id>
+      <mirrorOf>central</mirrorOf>
+      <name>Aliyun Maven</name>
+      <url>https://maven.aliyun.com/repository/public</url>
+    </mirror>
+  </mirrors>
+</settings>
 ```
 
 ### pnpm 安装失败

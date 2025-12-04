@@ -96,7 +96,7 @@ find apps/ packages/ -name "*.js" -o -name "*.jsx" 2>/dev/null | xargs wc -l 2>/
 
 对比 tech-stack.md 与实际配置文件：
 - `apps/web/package.json` - 前端依赖版本
-- `apps/server/build.gradle` - 后端依赖版本
+- `apps/server/pom.xml` - 后端依赖版本
 - 检查版本是否一致
 - 标记需要更新的依赖
 

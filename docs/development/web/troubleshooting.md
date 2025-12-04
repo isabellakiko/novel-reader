@@ -123,20 +123,27 @@ const worker = new SearchWorker()
 
 ## 后端问题
 
-### Gradle Wrapper 下载失败
+### Maven Wrapper 下载失败
 
-**现象**: `ClassNotFoundException: org.gradle.wrapper.GradleWrapperMain`
+**现象**: `mvnw: command not found` 或 Maven 下载失败
 
-**原因**: gradle-wrapper.jar 未正确下载或损坏
+**原因**: Maven Wrapper 脚本无执行权限或网络问题
 
 **解决方案**:
 ```bash
-# 方法 1：重新生成 wrapper（需要本地安装 Gradle）
-gradle wrapper --gradle-version 8.12
+# 方法 1：添加执行权限
+chmod +x ./mvnw
 
-# 方法 2：手动下载 jar
-# 下载地址: https://services.gradle.org/distributions/gradle-8.12-bin.zip
-# 解压后复制 lib/gradle-wrapper-*.jar 到 gradle/wrapper/
+# 方法 2：配置国内镜像（~/.m2/settings.xml）
+<settings>
+  <mirrors>
+    <mirror>
+      <id>aliyun</id>
+      <mirrorOf>central</mirrorOf>
+      <url>https://maven.aliyun.com/repository/public</url>
+    </mirror>
+  </mirrors>
+</settings>
 ```
 
 ---
@@ -302,6 +309,6 @@ server: {
 |------|------|----------|
 | 2025-12-04 | JWT Token 过期处理 | 添加 Axios 拦截器 |
 | 2025-12-04 | JPA 投影查询问题 | 修正接口方法名 |
-| 2025-12-04 | Gradle Wrapper 问题 | 重新生成 wrapper |
+| 2025-12-04 | Maven Wrapper 问题 | 配置镜像/执行权限 |
 | 2025-12-04 | Buffer 浏览器兼容 | 环境检测 + TextDecoder |
 | 2025-12-02 | - | 初始化文档 |

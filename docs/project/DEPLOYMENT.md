@@ -42,9 +42,9 @@ pnpm --filter web build
 cd apps/server
 
 # 构建 JAR
-./gradlew build -x test
+./mvnw package -DskipTests
 
-# 产物在 build/libs/novel-reader-server-0.0.1-SNAPSHOT.jar
+# 产物在 target/novel-reader-server-0.0.1-SNAPSHOT.jar
 ```
 
 ### 3. 配置 PostgreSQL
@@ -178,15 +178,17 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ```dockerfile
 # 构建阶段
-FROM gradle:8.12-jdk21 AS builder
+FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /app
-COPY . .
-RUN gradle build -x test --no-daemon
+COPY pom.xml .
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn package -DskipTests
 
 # 运行阶段
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar app.jar
+COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```

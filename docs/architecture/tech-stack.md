@@ -90,7 +90,7 @@
 |------|------|------|
 | Spring Boot | 3.4.5 | 应用框架 |
 | Java | 21 | 编程语言 |
-| Gradle | 8.12 | 构建工具 |
+| Maven | 3.9.9 | 构建工具（Maven Wrapper） |
 
 ### Web & API
 
@@ -285,6 +285,7 @@ db.version(4).stores({
 
 | 日期 | 变更 |
 |------|------|
+| 2025-12-04 | Gradle → Maven 迁移 |
 | 2025-12-04 | 添加后端技术栈 |
 | 2025-12-04 | 添加 Axios |
 | 2025-12-04 | 更新 IndexedDB Schema (v4) |

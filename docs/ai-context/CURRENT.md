@@ -95,7 +95,7 @@
 **完成工作**：
 
 **阶段 1: Spring Boot 后端**
-- ✅ 项目初始化（Gradle + Spring Boot 3.4.5 + Java 21）
+- ✅ 项目初始化（Maven + Spring Boot 3.4.5 + Java 21）
 - ✅ 数据库配置（H2 开发 / PostgreSQL 生产）
 - ✅ Flyway 数据库迁移
 - ✅ 用户认证模块（JWT + BCrypt）

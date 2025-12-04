@@ -344,15 +344,15 @@ pnpm add <pkg> --filter web
 ```bash
 # 开发
 cd apps/server
-./gradlew bootRun           # 启动开发服务器
+./mvnw spring-boot:run      # 启动开发服务器
 
 # 构建
-./gradlew build             # 构建 JAR
-./gradlew test              # 运行测试
+./mvnw package              # 构建 JAR
+./mvnw test                 # 运行测试
 
 # 数据库
-./gradlew flywayMigrate     # 运行迁移
-./gradlew flywayClean       # 清理数据库（慎用）
+./mvnw flyway:migrate       # 运行迁移
+./mvnw flyway:clean         # 清理数据库（慎用）
 ```
 
 ### Monorepo 命令
@@ -378,7 +378,7 @@ pnpm --filter @novel-reader/core test
 
 ### 后端
 - Java 21
-- Gradle 8.12
+- Maven 3.9+（通过 Maven Wrapper 自动下载）
 - PostgreSQL 16+（生产）/ H2（开发）
 
 ### 工具

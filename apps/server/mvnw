@@ -1,0 +1,21 @@
+#!/bin/sh
+# Maven Wrapper script
+# 自动下载并使用 Maven
+
+set -e
+
+# 配置
+MAVEN_VERSION="3.9.9"
+MAVEN_HOME="${HOME}/.m2/wrapper/dists/apache-maven-${MAVEN_VERSION}"
+MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+
+# 检查 Maven 是否已下载
+if [ ! -d "${MAVEN_HOME}" ]; then
+    echo "Downloading Maven ${MAVEN_VERSION}..."
+    mkdir -p "${MAVEN_HOME}"
+    curl -fsSL "${MAVEN_URL}" | tar -xz -C "${MAVEN_HOME}" --strip-components=1
+    echo "Maven ${MAVEN_VERSION} downloaded."
+fi
+
+# 执行 Maven
+exec "${MAVEN_HOME}/bin/mvn" "$@"

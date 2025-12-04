@@ -16,7 +16,7 @@
 
 **技术栈**:
 - **前端**: React 18 + Vite 5 + Tailwind CSS + Zustand + IndexedDB (Dexie)
-- **后端**: Spring Boot 3.4.5 + Java 21 + JWT + PostgreSQL/H2
+- **后端**: Spring Boot 3.4.5 + Java 21 + Maven + JWT + PostgreSQL/H2
 - **核心包**: 纯 JS 解析库（编码检测、章节识别、搜索引擎）
 
 **核心特点**:
