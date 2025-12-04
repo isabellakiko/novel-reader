@@ -97,47 +97,46 @@ export default function Library() {
   return (
     <div className="h-full flex flex-col">
       {/* 头部 */}
-      <header className="flex-shrink-0 px-6 py-4 border-b border-border">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-primary" />
+      <header className="flex-shrink-0 px-4 md:px-6 py-4 border-b border-border">
+        {/* 移动端：标题 + 导入按钮 */}
+        <div className="flex items-center justify-between gap-4 mb-3 md:mb-0">
+          <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             我的书架
           </h1>
 
-          {/* 操作按钮 */}
-          <div className="flex items-center gap-3">
-            {/* 搜索框 */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="搜索书籍..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={cn(
-                  'w-48 pl-9 pr-4 py-2 text-sm rounded-lg',
-                  'bg-muted border border-transparent',
-                  'focus:bg-background focus:border-primary focus:outline-none',
-                  'transition-all'
-                )}
-              />
-            </div>
+          {/* 导入按钮 */}
+          <motion.button
+            onClick={() => setShowUpload(!showUpload)}
+            className={cn(
+              'flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg',
+              'bg-primary text-primary-foreground',
+              'hover:bg-primary/90 transition-colors'
+            )}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">导入书籍</span>
+            <span className="sm:hidden">导入</span>
+          </motion.button>
+        </div>
 
-            {/* 导入按钮 */}
-            <motion.button
-              onClick={() => setShowUpload(!showUpload)}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-lg',
-                'bg-primary text-primary-foreground',
-                'hover:bg-primary/90 transition-colors'
-              )}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Plus className="w-4 h-4" />
-              导入书籍
-            </motion.button>
-          </div>
+        {/* 搜索框 - 移动端全宽 */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="搜索书籍..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={cn(
+              'w-full md:w-64 pl-9 pr-4 py-2 text-sm rounded-lg',
+              'bg-muted border border-transparent',
+              'focus:bg-background focus:border-primary focus:outline-none',
+              'transition-all'
+            )}
+          />
         </div>
       </header>
 
@@ -227,7 +226,7 @@ export default function Library() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-border rounded-xl shadow-lg px-6 py-4 flex items-center gap-4"
+            className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 bg-card border border-border rounded-xl shadow-lg px-6 py-4 flex items-center gap-4 z-40"
           >
             <Loader2 className="w-5 h-5 text-primary animate-spin" />
             <div>

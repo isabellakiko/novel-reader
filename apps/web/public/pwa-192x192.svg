@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" fill="#3b82f6" rx="32"/>
+  <g fill="white">
+    <!-- Book icon -->
+    <path d="M48 40 h96 a8 8 0 0 1 8 8 v96 a8 8 0 0 1 -8 8 h-96 a8 8 0 0 1 -8 -8 v-96 a8 8 0 0 1 8 -8z" fill="white" opacity="0.9"/>
+    <rect x="56" y="56" width="80" height="8" rx="2" fill="#3b82f6"/>
+    <rect x="56" y="72" width="60" height="6" rx="2" fill="#3b82f6" opacity="0.6"/>
+    <rect x="56" y="86" width="70" height="6" rx="2" fill="#3b82f6" opacity="0.6"/>
+    <rect x="56" y="100" width="50" height="6" rx="2" fill="#3b82f6" opacity="0.6"/>
+    <rect x="56" y="114" width="65" height="6" rx="2" fill="#3b82f6" opacity="0.6"/>
+    <rect x="56" y="128" width="55" height="6" rx="2" fill="#3b82f6" opacity="0.6"/>
+  </g>
+</svg>

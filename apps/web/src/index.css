@@ -196,3 +196,28 @@
 .dark .ring-2 {
   --tw-ring-opacity: 0.4;
 }
+
+/* ===== 移动端适配 ===== */
+
+/* iPhone 安全区域 */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 移动端触摸优化 */
+@media (max-width: 768px) {
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 防止文字选中 */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* 滚动优化 */
+  .scroll-smooth {
+    -webkit-overflow-scrolling: touch;
+  }
+}

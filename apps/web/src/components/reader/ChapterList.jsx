@@ -103,100 +103,116 @@ export default function ChapterList({
   }, [])
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="w-72 h-full bg-card border-r border-border flex flex-col"
-    >
-      {/* 头部 */}
-      <div className="flex-shrink-0 p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold">目录</h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-accent transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <>
+      {/* 移动端遮罩层 */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 z-40 md:hidden"
+        onClick={onClose}
+      />
 
-        {/* 搜索框 */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="搜索章节..."
-            value={searchQuery || ''}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            className={cn(
-              'w-full pl-9 pr-4 py-2 text-sm rounded-lg',
-              'bg-muted border border-transparent',
-              'focus:bg-background focus:border-primary focus:outline-none'
-            )}
-          />
-        </div>
-
-        {/* 章节统计和快捷操作 */}
-        <div className="flex items-center justify-between mt-2">
-          <p className="text-xs text-muted-foreground">
-            共 {chapters.length} 章
-            {searchQuery && ` · 找到 ${filteredChapters.length} 章`}
-          </p>
-          <div className="flex gap-1">
+      {/* 章节列表面板 */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        className={cn(
+          'h-full bg-card border-r border-border flex flex-col z-50',
+          // 移动端全屏，桌面端固定宽度
+          'fixed md:relative inset-y-0 left-0 w-[85vw] max-w-sm md:w-72'
+        )}
+      >
+        {/* 头部 */}
+        <div className="flex-shrink-0 p-4 border-b border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold">目录</h2>
             <button
-              onClick={jumpToStart}
-              className="p-1 rounded hover:bg-accent text-muted-foreground"
-              title="跳到开头"
+              onClick={onClose}
+              className="p-1 rounded hover:bg-accent transition-colors"
             >
-              <ChevronUp className="w-4 h-4" />
-            </button>
-            <button
-              onClick={scrollToCurrentChapter}
-              className="px-2 py-0.5 text-xs rounded hover:bg-accent text-muted-foreground"
-              title="回到当前"
-            >
-              当前
-            </button>
-            <button
-              onClick={jumpToEnd}
-              className="p-1 rounded hover:bg-accent text-muted-foreground"
-              title="跳到结尾"
-            >
-              <ChevronDown className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
-        </div>
-      </div>
 
-      {/* 虚拟滚动章节列表 */}
-      <div className="flex-1 overflow-hidden" ref={containerRef}>
-        {filteredChapters.length > 0 ? (
-          <FixedSizeList
-            ref={listRef}
-            height={listHeight}
-            itemCount={filteredChapters.length}
-            itemSize={ITEM_HEIGHT}
-            width="100%"
-            className="scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
-          >
-            {ChapterItem}
-          </FixedSizeList>
-        ) : (
-          <p className="text-center text-muted-foreground py-8 text-sm">
-            没有找到匹配的章节
-          </p>
+          {/* 搜索框 */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="搜索章节..."
+              value={searchQuery || ''}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              className={cn(
+                'w-full pl-9 pr-4 py-2 text-sm rounded-lg',
+                'bg-muted border border-transparent',
+                'focus:bg-background focus:border-primary focus:outline-none'
+              )}
+            />
+          </div>
+
+          {/* 章节统计和快捷操作 */}
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-muted-foreground">
+              共 {chapters.length} 章
+              {searchQuery && ` · 找到 ${filteredChapters.length} 章`}
+            </p>
+            <div className="flex gap-1">
+              <button
+                onClick={jumpToStart}
+                className="p-1 rounded hover:bg-accent text-muted-foreground"
+                title="跳到开头"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+              <button
+                onClick={scrollToCurrentChapter}
+                className="px-2 py-0.5 text-xs rounded hover:bg-accent text-muted-foreground"
+                title="回到当前"
+              >
+                当前
+              </button>
+              <button
+                onClick={jumpToEnd}
+                className="p-1 rounded hover:bg-accent text-muted-foreground"
+                title="跳到结尾"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 虚拟滚动章节列表 */}
+        <div className="flex-1 overflow-hidden" ref={containerRef}>
+          {filteredChapters.length > 0 ? (
+            <FixedSizeList
+              ref={listRef}
+              height={listHeight}
+              itemCount={filteredChapters.length}
+              itemSize={ITEM_HEIGHT}
+              width="100%"
+              className="scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+            >
+              {ChapterItem}
+            </FixedSizeList>
+          ) : (
+            <p className="text-center text-muted-foreground py-8 text-sm">
+              没有找到匹配的章节
+            </p>
+          )}
+        </div>
+
+        {/* 当前章节指示器 */}
+        {currentFilteredIndex >= 0 && (
+          <div className="flex-shrink-0 px-4 py-2 border-t border-border bg-muted/50">
+            <p className="text-xs text-muted-foreground truncate">
+              当前: {chapters[currentIndex]?.title}
+            </p>
+          </div>
         )}
-      </div>
-
-      {/* 当前章节指示器 */}
-      {currentFilteredIndex >= 0 && (
-        <div className="flex-shrink-0 px-4 py-2 border-t border-border bg-muted/50">
-          <p className="text-xs text-muted-foreground truncate">
-            当前: {chapters[currentIndex]?.title}
-          </p>
-        </div>
-      )}
-    </motion.div>
+      </motion.div>
+    </>
   )
 }
