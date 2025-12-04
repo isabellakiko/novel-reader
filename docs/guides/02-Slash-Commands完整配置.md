@@ -30,7 +30,7 @@
 | `/end` | end.md | 每日结束 | `--push`, `--no-push` |
 | `/weekly` | weekly.md | 每周文档优化 | `--push` |
 | `/monthly` | monthly.md | 每月归档 | `--push` |
-| `/audit` | audit.md | 项目健康检查 | `--quick`, `--full`, `--security` |
+| `/audit` | audit.md | 项目健康检查 | `--quick`, `--full`, `--security`, `--docs` |
 
 ---
 
@@ -905,282 +905,184 @@ EOF
 ## 7. /audit - 项目健康检查
 
 > 文件路径: `.claude/commands/audit.md`
+> **版本**: v2.0（增强版）- 新增深度文档同步审计
+
+### 7.1 功能概述
+
+`/audit` 是项目全面健康检查命令，支持 5 种审计模式：
+
+| 参数 | 审计范围 | 耗时预估 | 适用场景 |
+|------|----------|----------|----------|
+| `--quick` | Git 状态 + 文档日期检查 | 1-2 分钟 | 每天/提交前 |
+| 无参数 | 标准检查（代码 + 依赖 + 文档） | 5-8 分钟 | 每周常规 |
+| `--full` | 完整检查（含构建测试） | 10-15 分钟 | 大版本后 |
+| `--security` | 安全漏洞 + 敏感信息扫描 | 3-5 分钟 | 上线前 |
+| `--docs` | 深度文档同步审计 | 5-10 分钟 | Phase 完成后 |
+
+### 7.2 核心检查项
+
+#### 代码质量检查
+- TODO/FIXME 统计
+- console.log 残留检查
+- 前端构建检查
+- 后端编译检查
+
+#### 依赖健康检查
+- 过时依赖统计（pnpm outdated）
+- 安全漏洞扫描（pnpm audit）
+- 版本一致性（package.json vs tech-stack.md）
+
+#### 文档同步审计（v2.0 新增）
+
+**过时内容检测**：
+- CONTEXT.md 项目阶段与 ROADMAP.md 一致性
+- vision.md "非目标"是否包含已实现功能
+- OVERVIEW.md 架构描述是否过时
+
+**重复内容检测**：
+| 内容类型 | 检查位置 |
+|----------|----------|
+| 技术栈列表 | CONTEXT.md, tech-stack.md, OVERVIEW.md |
+| 目录结构 | CONTEXT.md, DEVELOPMENT.md, OVERVIEW.md |
+| API 端点 | CONTEXT.md, api.md |
+| 功能列表 | CONTEXT.md, vision.md, ROADMAP.md |
+
+**缺失内容检测**：
+- 实际组件 vs 文档组件（components.md）
+- 实际 Controller vs 文档 API（api.md）
+- 实际 Store vs 文档列表（CONTEXT.md）
+
+**日期检查**：
+- 文档最后更新日期是否过旧（>7天警告）
+
+**链接有效性**：
+- 内部链接是否存在目标文件
+
+### 7.3 审计报告格式
 
 ```markdown
----
-description: 项目健康检查，代码质量、依赖、文档同步
-argument-hint: [--quick | --full | --security]
-allowed-tools: Read, Bash(date, git, npm/yarn/pnpm, find, grep, wc)
----
+# 📋 项目审计报告
 
-<task>
-执行项目健康检查，生成审计报告，识别问题并提供建议。
-</task>
-
-<workflow>
-
-## Step 0: 获取当前时间和项目信息（必须）
-
-```bash
-CURRENT_DATE=$(date +%Y-%m-%d)
-CURRENT_TIME=$(date +%H:%M)
-CURRENT_WEEK_NUM=$(date +%V)
-
-echo "审计时间: $CURRENT_DATE $CURRENT_TIME (第 $CURRENT_WEEK_NUM 周)"
-```
-
-### 检测包管理器
-
-```bash
-# 检测使用的包管理器
-if [ -f "pnpm-lock.yaml" ]; then
-    PM="pnpm"
-elif [ -f "yarn.lock" ]; then
-    PM="yarn"
-elif [ -f "bun.lockb" ]; then
-    PM="bun"
-else
-    PM="npm"
-fi
-echo "包管理器: $PM"
-```
-
-## Step 1: 解析参数
-
-| 参数 | 检查范围 | 预计时间 |
-|------|----------|----------|
-| `--quick` | 代码质量 + Git 状态 | 2-3 分钟 |
-| 无参数 | 标准检查（不含性能测试） | 5-10 分钟 |
-| `--full` | 全部检查（含构建性能测试） | 10-15 分钟 |
-| `--security` | 重点安全漏洞扫描 | 3-5 分钟 |
-
-## Step 2: 代码质量检查
-
-### 2.1 ESLint 检查（前端）
-
-```bash
-# 进入前端目录
-cd apps/frontend
-
-# 运行 ESLint
-$PM run lint 2>&1 || true
-
-# 统计 errors 和 warnings
-echo "ESLint 检查完成"
-```
-
-### 2.2 未使用依赖检查
-
-```bash
-# 使用 depcheck（需要先安装）
-cd apps/frontend
-$PM exec depcheck 2>&1 || echo "depcheck 未安装或检查失败"
-```
-
-### 2.3 代码 TODO/FIXME 统计
-
-```bash
-# 统计代码中的 TODO 和 FIXME
-echo "=== TODO/FIXME 统计 ==="
-grep -r "TODO\|FIXME" apps/ --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.java" --include="*.py" 2>/dev/null | wc -l
-```
-
-## Step 3: 依赖健康检查
-
-### 3.1 过时依赖统计
-
-```bash
-cd apps/frontend
-$PM outdated 2>&1 || true
-```
-
-### 3.2 安全漏洞扫描
-
-```bash
-cd apps/frontend
-$PM audit 2>&1 || true
-```
-
-### 3.3 tech-stack.md 版本一致性
-
-读取 `docs/architecture/tech-stack.md` 和 `package.json`（或 pom.xml），对比版本。
-
-## Step 4: 性能指标追踪（--full 模式）
-
-### 4.1 构建性能测试
-
-```bash
-cd apps/frontend
-echo "开始构建性能测试..."
-time $PM run build 2>&1
-```
-
-### 4.2 产物大小统计
-
-```bash
-# 统计构建产物大小
-du -sh apps/frontend/dist 2>/dev/null || du -sh apps/frontend/.next 2>/dev/null || echo "未找到构建产物"
-```
-
-## Step 5: 文档同步检查
-
-### 5.1 组件文档完整性
-
-```bash
-# 统计实际组件数
-ACTUAL_COMPONENTS=$(find apps/frontend/src/components -name "*.jsx" -o -name "*.tsx" 2>/dev/null | wc -l)
-
-# 统计文档中的组件数（从 components.md 读取）
-echo "实际组件数: $ACTUAL_COMPONENTS"
-```
-
-对比 `docs/development/frontend/components.md` 中记录的组件数。
-
-### 5.2 API 文档完整性
-
-检查 `docs/development/backend/api.md` 是否覆盖所有 API 端点。
-
-### 5.3 CONTEXT.md 准确性
-
-检查 CONTEXT.md 中的：
-- 项目阶段是否与实际一致
-- 技术栈版本是否准确
-- 下一步任务是否与 CURRENT.md 一致
-
-## Step 6: Git 状态检查
-
-```bash
-echo "=== Git 状态 ==="
-# 未提交文件统计
-git status --short | wc -l
-
-# 本周 commits 统计
-WEEK_START=$(date -v-$(( $(date +%u) - 1 ))d +%Y-%m-%d 2>/dev/null || date -d "last monday" +%Y-%m-%d)
-git log --since="$WEEK_START" --oneline | wc -l
-```
-
-## Step 7: 生成审计报告
-
-创建报告文件：`docs/reports/audit-${CURRENT_DATE}.md`
-
-```markdown
-# 项目健康度审计报告
-
-**审计时间**: ${CURRENT_DATE} ${CURRENT_TIME}（第 ${CURRENT_WEEK_NUM} 周）
-**审计模式**: [--quick | 标准 | --full | --security]
+**审计时间**: YYYY-MM-DD HH:MM
+**审计模式**: [quick/标准/full/security/docs]
 
 ---
 
-## 1️⃣ 代码质量 [✅优秀 | ⚠️良好 | ❌需改进]
+## 📊 总览
 
-| 指标 | 结果 | 状态 |
+| 维度 | 状态 | 评分 |
 |------|------|------|
-| ESLint errors | X 个 | ✅/❌ |
-| ESLint warnings | X 个 | ✅/⚠️ |
-| 未使用依赖 | X 个 | ✅/⚠️ |
-| TODO/FIXME | X 个 | ✅/⚠️ |
-
-**评分**: XX/100
+| 代码质量 | ✅/⚠️/❌ | X/100 |
+| 依赖健康 | ✅/⚠️/❌ | X/100 |
+| 文档同步 | ✅/⚠️/❌ | X/100 |
+| **综合评分** | - | **X/100** |
 
 ---
 
-## 2️⃣ 依赖健康 [✅优秀 | ⚠️良好 | ❌需改进]
+## 🔴 过时内容（需立即修复）
+| 文件 | 问题 | 当前值 | 应改为 |
+|------|------|--------|--------|
+| ... | ... | ... | ... |
 
-| 指标 | 结果 | 状态 |
-|------|------|------|
-| 总依赖数 | X 个 | - |
-| 可更新 (Major) | X 个 | ⚠️ |
-| 可更新 (Minor) | X 个 | 📝 |
-| 可更新 (Patch) | X 个 | 📝 |
-| 安全漏洞 (Critical) | X 个 | ✅/❌ |
-| 安全漏洞 (High) | X 个 | ✅/❌ |
+## 🟡 重复内容（建议优化）
+| 内容 | 出现位置 | 建议 |
+|------|----------|------|
+| ... | ... | ... |
 
-**建议更新**:
-- [依赖名]: X.X.X → Y.Y.Y (原因)
+## 🟢 缺失内容（可选补充）
+| 模块/功能 | 文档位置 | 优先级 |
+|-----------|----------|--------|
+| ... | ... | ... |
 
----
-
-## 3️⃣ 性能指标 [✅优秀 | ⚠️良好 | ❌需改进]
-
-| 指标 | 结果 | 基准 | 状态 |
-|------|------|------|------|
-| 构建时间 | Xs | <5s | ✅/⚠️ |
-| 产物大小 | XMB | <3MB | ✅/⚠️ |
-
----
-
-## 4️⃣ 文档同步 [✅完整 | ⚠️需更新 | ❌缺失严重]
-
-| 文档 | 状态 | 说明 |
-|------|------|------|
-| components.md | ✅/⚠️ | X/Y 已文档化 |
-| api.md | ✅/⚠️ | X/Y 已文档化 |
-| tech-stack.md | ✅/⚠️ | X 个版本不一致 |
-| CONTEXT.md | ✅/⚠️ | [准确/需更新] |
-
-**遗漏文档**:
-- [组件/API 名称]
-
----
-
-## 5️⃣ Git 状态
-
-| 指标 | 结果 |
-|------|------|
-| 未提交文件 | X 个 |
-| 本周 commits | X 次 |
-
----
-
-## 📊 综合健康度评分
-
-**总评**: XX/100 [✅优秀 | ⚠️良好 | ❌需改进]
-
----
-
+## 📅 日期过旧的文档
+## 🔧 代码质量问题
+## 📦 依赖问题
 ## 🎯 行动建议（优先级排序）
-
-### 立即处理 (Critical)
-1. [建议 1]
-
-### 本周完成 (High)
-1. [建议 2]
-2. [建议 3]
-
-### 下周计划 (Medium)
-1. [建议 4]
-
----
-
-**报告路径**: docs/reports/audit-${CURRENT_DATE}.md
 ```
 
-## Step 8: 输出摘要
+### 7.4 使用建议
 
-```
-## 📋 审计完成
+```bash
+# 快速检查（每天/提交前）
+/audit --quick
 
-**时间**: ${CURRENT_DATE} ${CURRENT_TIME}
-**模式**: [--quick | 标准 | --full | --security]
+# 标准检查（每周）
+/audit
 
-### 快速摘要
-- **代码质量**: [✅/⚠️/❌] XX/100
-- **依赖健康**: [✅/⚠️/❌]
-- **文档同步**: [✅/⚠️/❌]
-- **综合评分**: XX/100
+# 完整审计（大版本后）
+/audit --full
 
-### 需要关注
-- [Critical 级别的问题]
+# 深度文档审计（Phase 完成后）
+/audit --docs
 
-### 报告位置
-docs/reports/audit-${CURRENT_DATE}.md
-
----
-详细报告已生成，是否需要我解释某个部分？
+# 安全检查（上线前）
+/audit --security
 ```
 
-</workflow>
-```
+### 7.5 工作流程概述
+
+由于 `/audit` 命令内容较长（400+ 行），请直接参考项目中的 `.claude/commands/audit.md` 文件。
+
+**主要工作流程**：
+1. **Step 0**: 获取基本信息（时间、项目、最近提交）
+2. **Step 1**: 解析参数（确定审计范围）
+3. **Step 2**: 项目结构探索（代码/文档统计）
+4. **Step 3**: 代码质量检查（TODO/FIXME、console.log、编译）
+5. **Step 4**: 依赖健康检查（过时、漏洞、版本一致性）
+6. **Step 5**: 文档同步审计（核心 - 过时/重复/缺失检测）
+7. **Step 6**: Slash Commands 检查
+8. **Step 7**: 生成审计报告
+9. **Step 8**: 执行优化（需用户确认后执行）
+10. **Step 9**: 提交变更
+
+### 7.6 检查清单
+
+#### Quick 模式
+- [ ] Git 是否有未提交的更改？
+- [ ] CONTEXT.md 项目阶段是否正确？
+- [ ] CURRENT.md 是否更新？
+- [ ] 各文档日期是否过旧（>7天）？
+
+#### 标准模式额外检查
+- [ ] 前端依赖是否有过时版本？
+- [ ] 后端是否能正常编译？
+- [ ] 组件数量与文档是否一致？
+- [ ] API 数量与文档是否一致？
+
+#### Full 模式额外检查
+- [ ] 前端构建是否成功？
+- [ ] 后端构建是否成功？
+- [ ] 所有测试是否通过？
+
+#### Docs 模式深度检查
+- [ ] 每个文档的每个章节是否准确？
+- [ ] 所有代码示例是否可运行？
+- [ ] 所有链接是否有效？
+- [ ] 是否有遗漏的新功能？
+
+#### Security 模式检查
+- [ ] 是否有硬编码的密钥/密码？
+- [ ] .env 是否在 .gitignore 中？
+- [ ] 依赖是否有已知漏洞？
+- [ ] API 是否有认证保护？
+
+### 7.7 最佳实践
+
+1. **每次完成 Phase 后**: `/audit --full`
+2. **每周一次**: `/audit`
+3. **每天提交前**: `/audit --quick`
+4. **上线前**: `/audit --security`
+
+**常见问题处理**：
+
+**Q: 发现大量过时内容怎么办？**
+A: 优先处理 CONTEXT.md 和 ROADMAP.md，这两个是 AI 上下文恢复的核心。
+
+**Q: 重复内容如何决定保留哪个？**
+A: 按专门性原则：技术栈保留 tech-stack.md，API 保留 api.md，通用信息保留 CONTEXT.md。
+
+**Q: 审计太慢怎么办？**
+A: 使用 `--quick` 模式，只检查最关键的同步问题。
 
 ---
 
@@ -1230,5 +1132,5 @@ mkdir -p .claude/commands
 
 ---
 
-**版本**: v2.0
-**更新日期**: 2025-11-26
+**版本**: v2.1
+**更新日期**: 2025-12-04
