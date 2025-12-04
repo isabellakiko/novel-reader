@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: novel-reader-server
+  profiles:
+    active: dev
+
+  # 数据源配置
+  datasource:
+    url: jdbc:h2:mem:novelreader;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # H2 Console (开发用)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # JPA 配置
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+
+  # Flyway 数据库迁移
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:novel-reader-dev-secret-key-change-in-production-2024}
+  expiration: 86400000 # 24小时
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.novelreader: DEBUG
+    org.springframework.security: DEBUG
+
+# OpenAPI 文档
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Actuator 健康检查
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized

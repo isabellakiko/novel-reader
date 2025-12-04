@@ -1,0 +1,11 @@
+{
+  "name": "@novel-reader/server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "./gradlew bootRun",
+    "build": "./gradlew build",
+    "test": "./gradlew test",
+    "clean": "./gradlew clean"
+  }
+}

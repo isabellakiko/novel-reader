@@ -1,0 +1,36 @@
+# 生产环境配置
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/novelreader}
+    driver-class-name: org.postgresql.Driver
+    username: ${DATABASE_USERNAME:novelreader}
+    password: ${DATABASE_PASSWORD:}
+
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  h2:
+    console:
+      enabled: false
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+logging:
+  level:
+    root: WARN
+    com.novelreader: INFO
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
