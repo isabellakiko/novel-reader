@@ -26,8 +26,12 @@ export const useReaderStore = create(
       settings: {
         fontSize: 18,
         lineHeight: 1.8,
-        fontFamily: 'serif', // 'serif' | 'sans'
+        fontFamily: 'serif', // 'serif' | 'sans' | 'kai' | 'fangsong'
         maxWidth: 800,
+        paragraphSpacing: 1.5, // 段落间距（em）
+        textAlign: 'left', // 'left' | 'justify'
+        backgroundColor: null, // null 表示跟随主题，否则为自定义颜色
+        textColor: null, // null 表示跟随主题
       },
 
       /**

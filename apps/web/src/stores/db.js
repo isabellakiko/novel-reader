@@ -44,6 +44,19 @@ db.version(3).stores({
   bookmarks: '++id, bookId, createdAt',
 })
 
+// 版本4: 添加阅读统计表
+db.version(4).stores({
+  books: 'id, title, author, importedAt',
+  readingProgress: 'bookId',
+  bookContents: 'bookId',
+  bookmarks: '++id, bookId, createdAt',
+  // 阅读统计表
+  // id: 主键（自增）
+  // bookId: 书籍ID（可查询）
+  // date: 日期（YYYY-MM-DD 格式，可查询）
+  readingStats: '++id, bookId, date, [bookId+date]',
+})
+
 /**
  * 书籍存储操作
  */
@@ -289,5 +302,148 @@ export const bookmarksStore = {
       )
       .first()
     return bookmark || null
+  },
+}
+
+/**
+ * 阅读统计存储操作
+ */
+export const statsStore = {
+  /**
+   * 获取今天的日期字符串
+   */
+  getTodayDate() {
+    return new Date().toISOString().split('T')[0]
+  },
+
+  /**
+   * 记录阅读时长
+   * @param {string} bookId - 书籍ID
+   * @param {number} duration - 阅读时长（秒）
+   * @param {number} characters - 阅读字数
+   */
+  async recordReading(bookId, duration, characters = 0) {
+    const date = this.getTodayDate()
+
+    // 查找今天这本书的记录
+    const existing = await db.readingStats
+      .where('[bookId+date]')
+      .equals([bookId, date])
+      .first()
+
+    if (existing) {
+      // 更新现有记录
+      await db.readingStats.update(existing.id, {
+        duration: existing.duration + duration,
+        characters: existing.characters + characters,
+        lastReadAt: new Date(),
+      })
+    } else {
+      // 创建新记录
+      await db.readingStats.add({
+        bookId,
+        date,
+        duration,
+        characters,
+        lastReadAt: new Date(),
+      })
+    }
+  },
+
+  /**
+   * 获取今日统计
+   */
+  async getTodayStats() {
+    const date = this.getTodayDate()
+    const records = await db.readingStats.where('date').equals(date).toArray()
+
+    return records.reduce(
+      (acc, r) => ({
+        duration: acc.duration + r.duration,
+        characters: acc.characters + r.characters,
+        booksRead: acc.booksRead + 1,
+      }),
+      { duration: 0, characters: 0, booksRead: 0 }
+    )
+  },
+
+  /**
+   * 获取本周统计
+   */
+  async getWeekStats() {
+    const today = new Date()
+    const weekAgo = new Date(today)
+    weekAgo.setDate(weekAgo.getDate() - 7)
+    const weekAgoDate = weekAgo.toISOString().split('T')[0]
+
+    const records = await db.readingStats
+      .where('date')
+      .above(weekAgoDate)
+      .toArray()
+
+    // 按日期分组
+    const byDate = {}
+    records.forEach((r) => {
+      if (!byDate[r.date]) {
+        byDate[r.date] = { duration: 0, characters: 0 }
+      }
+      byDate[r.date].duration += r.duration
+      byDate[r.date].characters += r.characters
+    })
+
+    // 获取总计
+    const total = records.reduce(
+      (acc, r) => ({
+        duration: acc.duration + r.duration,
+        characters: acc.characters + r.characters,
+      }),
+      { duration: 0, characters: 0 }
+    )
+
+    return { byDate, total }
+  },
+
+  /**
+   * 获取书籍统计
+   * @param {string} bookId
+   */
+  async getBookStats(bookId) {
+    const records = await db.readingStats
+      .where('bookId')
+      .equals(bookId)
+      .toArray()
+
+    return records.reduce(
+      (acc, r) => ({
+        duration: acc.duration + r.duration,
+        characters: acc.characters + r.characters,
+        days: acc.days + 1,
+      }),
+      { duration: 0, characters: 0, days: 0 }
+    )
+  },
+
+  /**
+   * 获取全部统计
+   */
+  async getAllStats() {
+    const records = await db.readingStats.toArray()
+
+    const total = records.reduce(
+      (acc, r) => ({
+        duration: acc.duration + r.duration,
+        characters: acc.characters + r.characters,
+      }),
+      { duration: 0, characters: 0 }
+    )
+
+    // 获取阅读天数
+    const uniqueDates = new Set(records.map((r) => r.date))
+
+    return {
+      ...total,
+      days: uniqueDates.size,
+      books: new Set(records.map((r) => r.bookId)).size,
+    }
   },
 }

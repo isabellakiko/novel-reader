@@ -18,10 +18,19 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { useReaderStore } from '../stores/reader'
 import { useBookmarkStore } from '../stores/bookmark'
+import { useStatsStore } from '../stores/stats'
 import ChapterList from '../components/reader/ChapterList'
 import ReaderSettings from '../components/reader/ReaderSettings'
 import { HighlightQuery } from '../components/search/HighlightedText'
 import { cn } from '../lib/utils'
+
+// 字体映射
+const FONT_FAMILY_MAP = {
+  serif: 'ui-serif, Georgia, serif',
+  sans: 'ui-sans-serif, system-ui, sans-serif',
+  kai: '"楷体", "KaiTi", "STKaiti", serif',
+  fangsong: '"仿宋", "FangSong", "STFangsong", serif',
+}
 
 export default function Reader() {
   const { bookId } = useParams()
@@ -52,6 +61,8 @@ export default function Reader() {
     getChapterBookmarks,
   } = useBookmarkStore()
 
+  const { startSession, endSession, addCharacters } = useStatsStore()
+
   // UI 状态
   const [showChapterList, setShowChapterList] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -78,6 +89,16 @@ export default function Reader() {
     return () => clearBook()
   }, [bookId, loadBook, loadBookmarks, clearBook])
 
+  // 阅读统计：开始/结束会话
+  useEffect(() => {
+    if (book?.id) {
+      startSession(book.id)
+    }
+    return () => {
+      endSession()
+    }
+  }, [book?.id, startSession, endSession])
+
   // 获取当前章节内容（需要在其他依赖它的 hooks 之前定义）
   const currentChapter = useMemo(() => {
     if (!book || !book.chapters.length) return null
@@ -92,6 +113,14 @@ export default function Reader() {
       lines,
     }
   }, [book, currentChapterIndex])
+
+  // 阅读统计：追踪阅读字数（章节切换时计算）
+  useEffect(() => {
+    if (currentChapter?.lines) {
+      const chars = currentChapter.lines.reduce((sum, line) => sum + line.length, 0)
+      addCharacters(chars)
+    }
+  }, [currentChapterIndex]) // 仅在章节切换时触发
 
   // 当前章节是否有书签
   const chapterBookmarks = useMemo(() => {
@@ -408,7 +437,14 @@ export default function Reader() {
         </AnimatePresence>
 
         {/* 阅读内容区 */}
-        <main className="flex-1 overflow-auto" ref={contentRef}>
+        <main
+          className="flex-1 overflow-auto transition-colors duration-200"
+          ref={contentRef}
+          style={{
+            backgroundColor: settings.backgroundColor || undefined,
+            color: settings.textColor || undefined,
+          }}
+        >
           {/* 搜索高亮提示条 */}
           <AnimatePresence>
             {highlightQuery && (
@@ -445,17 +481,22 @@ export default function Reader() {
 
             {/* 章节内容 */}
             <article
-              className={cn(
-                'reading-content',
-                settings.fontFamily === 'sans' ? 'font-sans' : 'font-serif'
-              )}
+              className="reading-content"
               style={{
                 fontSize: settings.fontSize,
                 lineHeight: settings.lineHeight,
+                fontFamily: FONT_FAMILY_MAP[settings.fontFamily] || FONT_FAMILY_MAP.serif,
               }}
             >
               {currentChapter?.lines.map((line, index) => (
-                <p key={index} className="mb-4 text-justify indent-8">
+                <p
+                  key={index}
+                  className="indent-8"
+                  style={{
+                    marginBottom: `${settings.paragraphSpacing || 1.5}em`,
+                    textAlign: settings.textAlign || 'left',
+                  }}
+                >
                   {highlightQuery ? (
                     <HighlightQuery text={line} query={highlightQuery} />
                   ) : (

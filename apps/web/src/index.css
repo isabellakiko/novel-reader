@@ -39,37 +39,44 @@
     --sidebar: 240 5% 98%;
   }
 
-  /* 夜间模式 */
+  /* 夜间模式 - 优化版 */
   .dark {
-    --background: 240 10% 8%;
-    --foreground: 0 0% 95%;
+    /* 稍亮的背景，减少纯黑刺眼感 */
+    --background: 220 15% 12%;
+    /* 降低前景亮度，减少对比度刺眼 */
+    --foreground: 220 10% 88%;
 
-    --card: 240 10% 10%;
-    --card-foreground: 0 0% 95%;
+    /* 卡片稍微亮一点，区分层次 */
+    --card: 220 15% 14%;
+    --card-foreground: 220 10% 88%;
 
-    --popover: 240 10% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 220 15% 14%;
+    --popover-foreground: 220 10% 88%;
 
-    --primary: 220 90% 56%;
+    /* 主色调保持鲜艳 */
+    --primary: 220 85% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 220 10% 20%;
+    --secondary-foreground: 220 10% 88%;
 
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 220 10% 20%;
+    /* 次要文字更亮一些，提高可读性 */
+    --muted-foreground: 220 8% 60%;
 
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 220 12% 22%;
+    --accent-foreground: 220 10% 88%;
 
-    --destructive: 0 63% 50%;
+    --destructive: 0 63% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 220 90% 56%;
+    /* 边框更亮，增强可见性 */
+    --border: 220 10% 22%;
+    --input: 220 10% 22%;
+    --ring: 220 85% 60%;
 
-    --sidebar: 240 10% 6%;
+    /* 侧边栏更暗，形成层次 */
+    --sidebar: 220 15% 10%;
   }
 
   /* 护眼模式 */
@@ -141,4 +148,51 @@
 .reading-content {
   @apply leading-relaxed;
   font-family: "Noto Serif SC", "Source Han Serif CN", "STSong", serif;
+}
+
+/* ===== 深色模式增强 ===== */
+
+/* 深色模式下的卡片阴影增强 */
+.dark .shadow-lg {
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+
+.dark .shadow-xl {
+  --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+}
+
+/* 深色模式下的输入框样式 */
+.dark input:focus,
+.dark select:focus {
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3);
+}
+
+/* 深色模式下的滚动条 */
+.dark ::-webkit-scrollbar-track {
+  background: hsl(220 15% 12%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(220 10% 30%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(220 10% 40%);
+}
+
+/* 深色模式下的高亮文本 */
+.dark mark {
+  background-color: hsl(45 100% 35%);
+  color: hsl(0 0% 95%);
+}
+
+/* 深色模式下的选中文本 */
+.dark ::selection {
+  background-color: hsl(220 85% 60% / 0.4);
+  color: hsl(0 0% 95%);
+}
+
+/* 深色模式下的边框发光效果 */
+.dark .ring-2 {
+  --tw-ring-opacity: 0.4;
 }
