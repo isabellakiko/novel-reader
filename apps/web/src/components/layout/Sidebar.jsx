@@ -27,20 +27,20 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-16 md:w-56 bg-sidebar border-r border-border flex flex-col">
+    <aside className="w-16 md:w-56 bg-sidebar border-r border-border flex flex-col" role="complementary">
       {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-border">
-        <BookOpen className="w-6 h-6 text-primary" />
+        <BookOpen className="w-6 h-6 text-primary" aria-hidden="true" />
         <span className="ml-3 font-semibold text-lg hidden md:block">
           Novel Reader
         </span>
       </div>
 
       {/* 导航链接 */}
-      <nav className="flex-1 py-4">
-        <ul className="space-y-1 px-2">
+      <nav className="flex-1 py-4" aria-label="主导航">
+        <ul className="space-y-1 px-2" role="menubar" aria-orientation="vertical">
           {navItems.map((item) => (
-            <li key={item.to}>
+            <li key={item.to} role="none">
               <NavLink
                 to={item.to}
                 className={({ isActive }) =>
@@ -52,6 +52,8 @@ export default function Sidebar() {
                       : 'text-muted-foreground'
                   )
                 }
+                role="menuitem"
+                aria-label={item.label}
               >
                 {({ isActive }) => (
                   <>
@@ -67,7 +69,7 @@ export default function Sidebar() {
                         }}
                       />
                     )}
-                    <item.icon className="w-5 h-5 relative z-10" />
+                    <item.icon className="w-5 h-5 relative z-10" aria-hidden="true" />
                     <span className="ml-3 hidden md:block relative z-10">
                       {item.label}
                     </span>
@@ -84,7 +86,7 @@ export default function Sidebar() {
         {isAuthenticated ? (
           <div className="flex items-center justify-between px-3 py-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
                 <User className="w-4 h-4 text-primary" />
               </div>
               <span className="text-sm font-medium truncate hidden md:block">
@@ -95,8 +97,9 @@ export default function Sidebar() {
               onClick={handleLogout}
               className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
               title="退出登录"
+              aria-label="退出登录"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         ) : (
@@ -104,8 +107,9 @@ export default function Sidebar() {
             to="/login"
             className="flex items-center px-3 py-2.5 rounded-lg text-muted-foreground
                      hover:bg-accent hover:text-accent-foreground transition-colors"
+            aria-label="登录同步"
           >
-            <User className="w-5 h-5" />
+            <User className="w-5 h-5" aria-hidden="true" />
             <span className="ml-3 hidden md:block">登录同步</span>
           </NavLink>
         )}

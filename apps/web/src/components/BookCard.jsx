@@ -9,6 +9,8 @@ import { MoreVertical, Trash2, BookOpen, Cloud, HardDrive } from 'lucide-react'
 import { motion } from 'framer-motion'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { cn } from '../lib/utils'
+import { useTagStore } from '../stores/tags'
+import { FavoriteButton, TagBadge } from './library/TagComponents'
 
 /**
  * 格式化文件大小
@@ -46,6 +48,11 @@ export default function BookCard({ book, onDelete, progress }) {
   const theme = generateCoverTheme(book.title)
   const totalChapters = book.metadata?.totalChapters || book.chapters?.length || book.totalChapters || 0
   const isCloud = book.source === 'cloud'
+
+  // 标签和收藏
+  const { getBookTags, isFavorite } = useTagStore()
+  const bookTags = getBookTags(book.id)
+  const isBookFavorite = isFavorite(book.id)
 
   // 计算阅读进度
   const currentChapter = progress?.chapterIndex ?? -1
@@ -109,15 +116,17 @@ export default function BookCard({ book, onDelete, progress }) {
               {/* 顶部装饰线和来源标识 */}
               <div className="flex items-center justify-between mb-4">
                 <div className={cn('h-1 w-12 rounded-full', theme.accent)} />
-                {/* 来源标识 */}
-                <div
-                  className={cn(
-                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-xs',
-                    isCloud ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-500/20 text-slate-300'
-                  )}
-                  title={isCloud ? '云端书籍' : '本地书籍'}
-                >
-                  {isCloud ? <Cloud className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
+                <div className="flex items-center gap-1">
+                  {/* 来源标识 */}
+                  <div
+                    className={cn(
+                      'flex items-center gap-1 px-1.5 py-0.5 rounded text-xs',
+                      isCloud ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-500/20 text-slate-300'
+                    )}
+                    title={isCloud ? '云端书籍' : '本地书籍'}
+                  >
+                    {isCloud ? <Cloud className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
+                  </div>
                 </div>
               </div>
 
@@ -135,6 +144,18 @@ export default function BookCard({ book, onDelete, progress }) {
               <p className="text-white/60 text-xs mt-2 line-clamp-1">
                 {book.author || '佚名'}
               </p>
+
+              {/* 标签 */}
+              {bookTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {bookTags.slice(0, 2).map(tag => (
+                    <TagBadge key={tag.id} tag={tag} size="sm" />
+                  ))}
+                  {bookTags.length > 2 && (
+                    <span className="text-white/50 text-xs">+{bookTags.length - 2}</span>
+                  )}
+                </div>
+              )}
 
               {/* 底部信息 */}
               <div className="mt-3 pt-3 border-t border-white/10">
@@ -214,17 +235,36 @@ export default function BookCard({ book, onDelete, progress }) {
         </motion.div>
       </div>
 
+      {/* 收藏按钮 */}
+      <div
+        className={cn(
+          'absolute top-2 left-2 z-10 rounded-lg',
+          'transition-all duration-200',
+          isBookFavorite
+            ? 'bg-black/40 backdrop-blur-sm'
+            : 'bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100'
+        )}
+      >
+        <FavoriteButton bookId={book.id} size="sm" />
+      </div>
+
       {/* 操作菜单 */}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button
             className={cn(
-              'absolute top-2 right-2 p-1.5 rounded-lg z-10',
+              'absolute top-2 right-2 z-10',
+              // 增大触摸区域：移动端 44px，桌面端 32px
+              'w-11 h-11 md:w-8 md:h-8',
+              'flex items-center justify-center rounded-lg',
               'bg-black/40 backdrop-blur-sm text-white',
-              'opacity-0 group-hover:opacity-100 transition-opacity',
-              'hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/50'
+              // 移动端始终可见，桌面端 hover 显示
+              'opacity-70 md:opacity-0 md:group-hover:opacity-100',
+              'active:opacity-100 transition-opacity',
+              'hover:bg-black/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50'
             )}
             onClick={(e) => e.stopPropagation()}
+            aria-label="书籍操作菜单"
           >
             <MoreVertical className="w-4 h-4" />
           </button>

@@ -21,6 +21,12 @@ import {
   FileText,
   BarChart3,
   Clock,
+  Star,
+  StarOff,
+  Download,
+  HelpCircle,
+  Bookmark,
+  Trash2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as Switch from '@radix-ui/react-switch'
@@ -28,6 +34,16 @@ import { useSearchStore, SEARCH_MODES } from '../stores/search'
 import { useLibraryStore } from '../stores/library'
 import SearchResults from '../components/search/SearchResults'
 import { cn } from '../lib/utils'
+import useToastStore from '../stores/toast'
+
+// 搜索语法提示
+const SEARCH_TIPS = [
+  { pattern: '"词组"', desc: '精确匹配（如 "武林盟主"）' },
+  { pattern: 'A|B', desc: '匹配 A 或 B（如 张三|李四）' },
+  { pattern: '张.*三', desc: '模糊匹配（如 张 和 三 之间任意字符）' },
+  { pattern: '^第.*章', desc: '行首匹配章节标题' },
+  { pattern: '[一二三]', desc: '匹配任一字符' },
+]
 
 // 搜索模式图标映射
 const MODE_ICONS = {
@@ -52,19 +68,33 @@ export default function Search() {
     selectedBookId,
     setSelectedBook,
     history,
+    savedSearches,
+    suggestions,
+    getSuggestions,
     error,
     search,
     cancelSearch,
     clearResults,
+    saveSearch,
+    removeSavedSearch,
+    applySavedSearch,
+    exportResults,
   } = useSearchStore()
+
+  const toast = useToastStore()
 
   const { books, loadBooks } = useLibraryStore()
 
   const [showOptions, setShowOptions] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [showTips, setShowTips] = useState(false)
+  const [showSaved, setShowSaved] = useState(false)
   const [localQuery, setLocalQuery] = useState(query)
   const inputRef = useRef(null)
   const debounceRef = useRef(null)
+
+  // 判断当前搜索是否已保存
+  const isSearchSaved = savedSearches.some((s) => s.query === query)
 
   // 加载书籍列表
   useEffect(() => {
@@ -85,11 +115,14 @@ export default function Search() {
     search(localQuery)
   }, [localQuery, search, clearResults])
 
-  // 实时搜索（防抖）
+  // 实时搜索（防抖）+ 搜索建议
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current)
     }
+
+    // 生成搜索建议
+    getSuggestions(localQuery)
 
     if (localQuery.trim().length >= 2) {
       debounceRef.current = setTimeout(() => {
@@ -102,7 +135,7 @@ export default function Search() {
         clearTimeout(debounceRef.current)
       }
     }
-  }, [localQuery])
+  }, [localQuery, getSuggestions])
 
   // 处理回车
   const handleKeyDown = (e) => {
@@ -131,6 +164,32 @@ export default function Search() {
     setLocalQuery('')
     clearResults()
     inputRef.current?.focus()
+  }
+
+  // 保存/取消保存搜索
+  const handleToggleSave = () => {
+    if (!query.trim()) return
+
+    if (isSearchSaved) {
+      const saved = savedSearches.find((s) => s.query === query)
+      if (saved) {
+        removeSavedSearch(saved.id)
+        toast.success('已取消收藏')
+      }
+    } else {
+      saveSearch(query)
+      toast.success('已收藏搜索')
+    }
+  }
+
+  // 导出结果
+  const handleExport = () => {
+    const data = exportResults()
+    if (data) {
+      toast.success(`已导出 ${data.totalMatches} 条搜索结果`)
+    } else {
+      toast.error('没有可导出的结果')
+    }
   }
 
   // 计算统计信息
@@ -198,14 +257,62 @@ export default function Search() {
                   'p-1.5 rounded-lg transition-colors',
                   showOptions ? 'bg-accent' : 'hover:bg-accent'
                 )}
+                title="搜索选项"
               >
                 <Settings2 className="w-4 h-4" />
               </button>
+
+              <button
+                onClick={() => setShowTips(!showTips)}
+                className={cn(
+                  'p-1.5 rounded-lg transition-colors',
+                  showTips ? 'bg-accent' : 'hover:bg-accent'
+                )}
+                title="搜索语法帮助"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* 搜索历史下拉 */}
+            {/* 搜索建议下拉 */}
             <AnimatePresence>
-              {showHistory && history.length > 0 && (
+              {showHistory && suggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-xl shadow-lg overflow-hidden z-10"
+                >
+                  <div className="px-3 py-2 text-xs text-muted-foreground flex items-center gap-1 border-b border-border">
+                    <SearchIcon className="w-3 h-3" />
+                    搜索建议
+                  </div>
+                  {suggestions.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() => selectHistory(item.text)}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
+                    >
+                      {item.type === 'saved' ? (
+                        <Star className="w-3 h-3 text-yellow-500" />
+                      ) : (
+                        <History className="w-3 h-3 text-muted-foreground" />
+                      )}
+                      <span className="flex-1 truncate">{item.text}</span>
+                      {item.type === 'saved' && item.name !== item.text && (
+                        <span className="text-xs text-muted-foreground">
+                          {item.name}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* 搜索历史下拉（当没有建议时显示） */}
+            <AnimatePresence>
+              {showHistory && suggestions.length === 0 && history.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -353,6 +460,87 @@ export default function Search() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* 搜索语法帮助 */}
+          <AnimatePresence>
+            {showTips && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-4">
+                  <div className="p-4 bg-muted/50 rounded-xl border border-border">
+                    <div className="flex items-center gap-2 mb-3">
+                      <HelpCircle className="w-4 h-4 text-primary" />
+                      <span className="font-medium text-sm">正则表达式语法（需开启正则选项）</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {SEARCH_TIPS.map((tip, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <code className="px-2 py-0.5 bg-background rounded text-primary text-xs font-mono">
+                            {tip.pattern}
+                          </code>
+                          <span className="text-muted-foreground text-xs">
+                            {tip.desc}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 收藏的搜索 */}
+          {savedSearches.length > 0 && (
+            <div className="mt-4">
+              <button
+                onClick={() => setShowSaved(!showSaved)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Bookmark className="w-4 h-4" />
+                <span>收藏的搜索 ({savedSearches.length})</span>
+              </button>
+
+              <AnimatePresence>
+                {showSaved && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-2 flex flex-wrap gap-2"
+                  >
+                    {savedSearches.map((saved) => (
+                      <div
+                        key={saved.id}
+                        className="group flex items-center gap-1 px-3 py-1.5 bg-muted rounded-lg text-sm"
+                      >
+                        <button
+                          onClick={() => applySavedSearch(saved)}
+                          className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                        >
+                          <Star className="w-3 h-3 text-yellow-500" />
+                          <span>{saved.name}</span>
+                        </button>
+                        <button
+                          onClick={() => removeSavedSearch(saved.id)}
+                          className="p-0.5 opacity-0 group-hover:opacity-100 hover:text-destructive transition-all"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </header>
 
@@ -386,8 +574,33 @@ export default function Search() {
                   </span>{' '}
                   本书籍
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {SEARCH_MODES[searchMode]?.name}模式
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleToggleSave}
+                    className={cn(
+                      'p-1.5 rounded-lg transition-colors',
+                      isSearchSaved
+                        ? 'text-yellow-500 hover:bg-yellow-500/10'
+                        : 'text-muted-foreground hover:bg-accent'
+                    )}
+                    title={isSearchSaved ? '取消收藏' : '收藏搜索'}
+                  >
+                    {isSearchSaved ? (
+                      <Star className="w-4 h-4 fill-current" />
+                    ) : (
+                      <StarOff className="w-4 h-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={handleExport}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:bg-accent transition-colors"
+                    title="导出搜索结果"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {SEARCH_MODES[searchMode]?.name}模式
+                  </span>
                 </div>
               </div>
             </div>

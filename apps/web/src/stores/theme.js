@@ -9,7 +9,7 @@ import { persist } from 'zustand/middleware'
 
 /**
  * 主题类型
- * @typedef {'system' | 'light' | 'dark' | 'sepia'} Theme
+ * @typedef {'system' | 'light' | 'dark' | 'sepia' | 'green' | 'mint' | 'purple'} Theme
  */
 
 /**
@@ -19,18 +19,37 @@ export const THEMES = {
   system: {
     name: '自动',
     icon: 'Monitor',
+    group: 'system',
   },
   light: {
     name: '白天',
     icon: 'Sun',
+    group: 'light',
   },
   dark: {
     name: '夜间',
     icon: 'Moon',
+    group: 'dark',
   },
   sepia: {
-    name: '护眼',
+    name: '暖黄',
     icon: 'Eye',
+    group: 'light',
+  },
+  green: {
+    name: '豆沙绿',
+    icon: 'Leaf',
+    group: 'light',
+  },
+  mint: {
+    name: '薄荷蓝',
+    icon: 'Droplets',
+    group: 'light',
+  },
+  purple: {
+    name: '暗紫',
+    icon: 'Moon',
+    group: 'dark',
   },
 }
 
@@ -54,16 +73,55 @@ function applyTheme(theme, isSystem = false) {
   const actualTheme = isSystem ? getSystemTheme() : theme
 
   // 移除所有主题类
-  root.classList.remove('light', 'dark', 'sepia')
+  root.classList.remove('light', 'dark', 'sepia', 'green', 'mint', 'purple')
 
   // 添加新主题类
   root.classList.add(actualTheme)
 
-  // 更新 color-scheme
-  if (actualTheme === 'dark') {
+  // 根据主题组设置 color-scheme
+  const themeConfig = THEMES[actualTheme]
+  if (themeConfig?.group === 'dark' || actualTheme === 'dark' || actualTheme === 'purple') {
     root.style.colorScheme = 'dark'
   } else {
     root.style.colorScheme = 'light'
+  }
+}
+
+// 全局存储系统主题监听器，确保只有一个
+let systemThemeListener = null
+let systemThemeMediaQuery = null
+
+/**
+ * 设置系统主题变化监听器（单例模式）
+ * @param {Function} getTheme - 获取当前主题的函数
+ */
+function setupSystemThemeListener(getTheme) {
+  if (typeof window === 'undefined') return
+
+  // 移除旧的监听器（如果存在）
+  cleanupSystemThemeListener()
+
+  // 创建新的监听器
+  systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  systemThemeListener = () => {
+    const currentTheme = getTheme()
+    if (currentTheme === 'system') {
+      applyTheme('system', true)
+    }
+  }
+
+  // 添加监听器
+  systemThemeMediaQuery.addEventListener('change', systemThemeListener)
+}
+
+/**
+ * 清理系统主题监听器
+ */
+function cleanupSystemThemeListener() {
+  if (systemThemeMediaQuery && systemThemeListener) {
+    systemThemeMediaQuery.removeEventListener('change', systemThemeListener)
+    systemThemeListener = null
+    systemThemeMediaQuery = null
   }
 }
 
@@ -82,18 +140,33 @@ export const useThemeStore = create(
       setTheme: (theme) => {
         applyTheme(theme, theme === 'system')
         set({ theme })
+
+        // 根据新主题决定是否需要系统主题监听
+        if (theme === 'system') {
+          setupSystemThemeListener(() => get().theme)
+        } else {
+          cleanupSystemThemeListener()
+        }
       },
 
       /**
        * 切换到下一个主题
        */
       cycleTheme: () => {
-        const themes = ['system', 'light', 'dark', 'sepia']
+        const themes = Object.keys(THEMES)
         const currentIndex = themes.indexOf(get().theme)
         const nextIndex = (currentIndex + 1) % themes.length
         const nextTheme = themes[nextIndex]
+
         applyTheme(nextTheme, nextTheme === 'system')
         set({ theme: nextTheme })
+
+        // 根据新主题决定是否需要系统主题监听
+        if (nextTheme === 'system') {
+          setupSystemThemeListener(() => get().theme)
+        } else {
+          cleanupSystemThemeListener()
+        }
       },
 
       /**
@@ -103,16 +176,9 @@ export const useThemeStore = create(
         const { theme } = get()
         applyTheme(theme, theme === 'system')
 
-        // 监听系统主题变化
+        // 如果是系统模式，设置监听器
         if (theme === 'system') {
-          const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-          const handleChange = () => {
-            const currentTheme = get().theme
-            if (currentTheme === 'system') {
-              applyTheme('system', true)
-            }
-          }
-          mediaQuery.addEventListener('change', handleChange)
+          setupSystemThemeListener(() => get().theme)
         }
       },
 
@@ -123,6 +189,13 @@ export const useThemeStore = create(
         const { theme } = get()
         return theme === 'system' ? getSystemTheme() : theme
       },
+
+      /**
+       * 清理资源（组件卸载时调用）
+       */
+      cleanup: () => {
+        cleanupSystemThemeListener()
+      },
     }),
     {
       name: 'novel-reader-theme',
@@ -131,15 +204,12 @@ export const useThemeStore = create(
         if (state) {
           applyTheme(state.theme, state.theme === 'system')
 
-          // 监听系统主题变化
-          if (typeof window !== 'undefined') {
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-            const handleChange = () => {
-              if (state.theme === 'system') {
-                applyTheme('system', true)
-              }
-            }
-            mediaQuery.addEventListener('change', handleChange)
+          // 如果是系统模式，设置监听器（使用单例确保不重复）
+          if (state.theme === 'system' && typeof window !== 'undefined') {
+            // 延迟设置，确保 store 完全初始化
+            setTimeout(() => {
+              setupSystemThemeListener(() => useThemeStore.getState().theme)
+            }, 0)
           }
         }
       },

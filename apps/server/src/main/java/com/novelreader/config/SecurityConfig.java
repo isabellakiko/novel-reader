@@ -1,6 +1,7 @@
 package com.novelreader.config;
 
 import com.novelreader.security.JwtAuthenticationFilter;
+import com.novelreader.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +31,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -47,8 +49,10 @@ public class SecurityConfig {
                 // 其他需要认证
                 .anyRequest().authenticated()
             )
+            // 添加限流过滤器（最先执行）
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             // 添加 JWT 过滤器
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(jwtAuthenticationFilter, RateLimitFilter.class)
             // 允许 H2 Console iframe
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin()));

@@ -79,7 +79,7 @@
     --sidebar: 220 15% 10%;
   }
 
-  /* 护眼模式 */
+  /* 护眼模式 - 暖黄 */
   .sepia {
     --background: 40 40% 94%;
     --foreground: 30 20% 20%;
@@ -110,6 +110,105 @@
     --ring: 30 60% 45%;
 
     --sidebar: 40 35% 90%;
+  }
+
+  /* 护眼模式 - 豆沙绿 */
+  .green {
+    --background: 100 25% 92%;
+    --foreground: 100 15% 20%;
+
+    --card: 100 25% 94%;
+    --card-foreground: 100 15% 20%;
+
+    --popover: 100 25% 94%;
+    --popover-foreground: 100 15% 20%;
+
+    --primary: 120 40% 40%;
+    --primary-foreground: 100 25% 95%;
+
+    --secondary: 100 20% 85%;
+    --secondary-foreground: 100 15% 20%;
+
+    --muted: 100 20% 85%;
+    --muted-foreground: 100 10% 45%;
+
+    --accent: 100 20% 85%;
+    --accent-foreground: 100 15% 20%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 100 25% 95%;
+
+    --border: 100 18% 82%;
+    --input: 100 18% 82%;
+    --ring: 120 40% 40%;
+
+    --sidebar: 100 22% 88%;
+  }
+
+  /* 薄荷蓝模式 */
+  .mint {
+    --background: 180 30% 95%;
+    --foreground: 200 25% 18%;
+
+    --card: 180 30% 97%;
+    --card-foreground: 200 25% 18%;
+
+    --popover: 180 30% 97%;
+    --popover-foreground: 200 25% 18%;
+
+    --primary: 190 60% 42%;
+    --primary-foreground: 180 30% 98%;
+
+    --secondary: 180 22% 88%;
+    --secondary-foreground: 200 25% 18%;
+
+    --muted: 180 22% 88%;
+    --muted-foreground: 200 15% 45%;
+
+    --accent: 180 22% 88%;
+    --accent-foreground: 200 25% 18%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 180 30% 98%;
+
+    --border: 180 20% 85%;
+    --input: 180 20% 85%;
+    --ring: 190 60% 42%;
+
+    --sidebar: 180 25% 92%;
+  }
+
+  /* 暗紫模式 */
+  .purple {
+    --background: 270 20% 12%;
+    --foreground: 270 15% 88%;
+
+    --card: 270 20% 14%;
+    --card-foreground: 270 15% 88%;
+
+    --popover: 270 20% 14%;
+    --popover-foreground: 270 15% 88%;
+
+    --primary: 280 70% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 270 15% 20%;
+    --secondary-foreground: 270 15% 88%;
+
+    --muted: 270 15% 20%;
+    --muted-foreground: 270 12% 58%;
+
+    --accent: 270 18% 22%;
+    --accent-foreground: 270 15% 88%;
+
+    --destructive: 0 63% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 270 15% 22%;
+    --input: 270 15% 22%;
+    --ring: 280 70% 60%;
+
+    --sidebar: 270 20% 10%;
   }
 }
 

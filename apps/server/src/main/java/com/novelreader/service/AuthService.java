@@ -94,6 +94,22 @@ public class AuthService {
             .build();
     }
 
+    /**
+     * 刷新 Token
+     * 验证当前用户有效后签发新 Token
+     */
+    public AuthResponse refreshToken(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> BusinessException.notFound("用户不存在"));
+
+        if (!user.getEnabled()) {
+            throw BusinessException.forbidden("账号已被禁用");
+        }
+
+        log.debug("Token 刷新成功: {}", user.getUsername());
+        return buildAuthResponse(user);
+    }
+
     private AuthResponse buildAuthResponse(User user) {
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername());
 

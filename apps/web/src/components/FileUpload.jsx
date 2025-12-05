@@ -99,6 +99,19 @@ export default function FileUpload({ onFileSelect, isLoading, className }) {
     input.click()
   }, [handleFiles, isLoading])
 
+  /**
+   * 键盘事件处理（支持 Enter 和 Space 触发）
+   */
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        handleClick()
+      }
+    },
+    [handleClick]
+  )
+
   return (
     <motion.div
       className={cn(
@@ -114,8 +127,14 @@ export default function FileUpload({ onFileSelect, isLoading, className }) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
       whileHover={{ scale: isLoading ? 1 : 1.01 }}
       whileTap={{ scale: isLoading ? 1 : 0.99 }}
+      role="button"
+      tabIndex={isLoading ? -1 : 0}
+      aria-label="上传文件区域，点击或拖拽文件到此处"
+      aria-busy={isLoading}
+      aria-disabled={isLoading}
     >
       {/* 图标 */}
       <motion.div
@@ -129,13 +148,14 @@ export default function FileUpload({ onFileSelect, isLoading, className }) {
         }}
       >
         {isLoading ? (
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary animate-spin" aria-hidden="true" />
         ) : (
           <Upload
             className={cn(
               'w-8 h-8',
               isDragOver ? 'text-primary' : 'text-muted-foreground'
             )}
+            aria-hidden="true"
           />
         )}
       </motion.div>
@@ -159,7 +179,7 @@ export default function FileUpload({ onFileSelect, isLoading, className }) {
             exit={{ opacity: 0, y: -10 }}
             className="absolute bottom-4 left-4 right-4 bg-destructive/10 text-destructive text-sm px-4 py-2 rounded-lg flex items-center gap-2"
           >
-            <X className="w-4 h-4 flex-shrink-0" />
+            <X className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
             {dragError}
           </motion.div>
         )}
@@ -167,8 +187,8 @@ export default function FileUpload({ onFileSelect, isLoading, className }) {
 
       {/* 支持的格式标签 */}
       <div className="flex gap-2">
-        <span className="px-2 py-1 bg-muted rounded text-xs text-muted-foreground flex items-center gap-1">
-          <FileText className="w-3 h-3" />
+        <span className="px-2 py-1 bg-muted rounded text-xs text-muted-foreground flex items-center gap-1" aria-label="支持 TXT 格式">
+          <FileText className="w-3 h-3" aria-hidden="true" />
           TXT
         </span>
       </div>

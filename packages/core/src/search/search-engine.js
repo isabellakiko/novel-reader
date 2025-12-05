@@ -59,6 +59,35 @@ const DEFAULT_OPTIONS = {
 }
 
 /**
+ * 检测字符串是否包含 CJK 字符
+ * @param {string} str - 字符串
+ * @returns {boolean}
+ */
+function containsCJK(str) {
+  // CJK 统一表意文字 + 扩展区 + 日文假名 + 韩文
+  return /[\u4e00-\u9fff\u3400-\u4dbf\u{20000}-\u{2a6df}\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/u.test(str)
+}
+
+/**
+ * 创建 CJK 友好的词边界模式
+ * @param {string} pattern - 已转义的搜索模式
+ * @param {string} originalQuery - 原始搜索词
+ * @returns {string} 带边界的模式
+ */
+function createWordBoundaryPattern(pattern, originalQuery) {
+  if (containsCJK(originalQuery)) {
+    // CJK 字符：使用前后断言确保不被其他 CJK 字符包围
+    // 但允许标点、空格、数字等边界
+    const cjkBoundary = '(?<![\\u4e00-\\u9fff\\u3400-\\u4dbf\\u3040-\\u309f\\u30a0-\\u30ff\\uac00-\\ud7af])'
+    const cjkBoundaryEnd = '(?![\\u4e00-\\u9fff\\u3400-\\u4dbf\\u3040-\\u309f\\u30a0-\\u30ff\\uac00-\\ud7af])'
+    return `${cjkBoundary}${pattern}${cjkBoundaryEnd}`
+  } else {
+    // 非 CJK：使用标准词边界
+    return `\\b${pattern}\\b`
+  }
+}
+
+/**
  * 创建搜索用的正则表达式
  * @param {string} query - 搜索词
  * @param {SearchOptions} options - 搜索选项
@@ -72,13 +101,13 @@ function createSearchPattern(query, options) {
     pattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   }
 
-  // 全词匹配
+  // 全词匹配 - 使用 CJK 友好的边界
   if (options.wholeWord) {
-    pattern = `\\b${pattern}\\b`
+    pattern = createWordBoundaryPattern(pattern, query)
   }
 
-  // 创建正则表达式
-  const flags = options.caseSensitive ? 'g' : 'gi'
+  // 创建正则表达式（添加 u 标志支持 Unicode）
+  const flags = options.caseSensitive ? 'gu' : 'giu'
   return new RegExp(pattern, flags)
 }
 
@@ -361,14 +390,19 @@ export function searchBooks(books, query, options = {}, onBookComplete, onProgre
  * @returns {Array<{text: string, isMatch: boolean}>} 分段结果
  */
 export function highlightMatches(text, query, caseSensitive = false) {
-  if (!query) return [{ text, isMatch: false }]
+  if (!query || !text) return [{ text: text || '', isMatch: false }]
 
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const pattern = new RegExp(`(${escapedQuery})`, caseSensitive ? 'g' : 'gi')
-  const parts = text.split(pattern)
+  // 使用非全局正则进行匹配检测，避免 lastIndex 问题
+  const testPattern = new RegExp(`^${escapedQuery}$`, caseSensitive ? '' : 'i')
+  // 使用全局正则进行分割
+  const splitPattern = new RegExp(`(${escapedQuery})`, caseSensitive ? 'g' : 'gi')
+  const parts = text.split(splitPattern)
 
-  return parts.map((part) => ({
-    text: part,
-    isMatch: pattern.test(part),
-  }))
+  return parts
+    .filter(part => part !== '') // 过滤空字符串
+    .map((part) => ({
+      text: part,
+      isMatch: testPattern.test(part),
+    }))
 }

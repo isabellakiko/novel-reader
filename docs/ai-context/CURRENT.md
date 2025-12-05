@@ -91,46 +91,6 @@
 - ✅ 更新 CURRENT.md（修复任务列表）
 - ✅ 更新其他过时文档
 
-### Day 3 - 2025-12-05（周五）⭐ 功能扩展 + 文档审计
-
-**工作时长**: 全天
-**核心任务**: 高亮笔记、标签分类、进度增强、数据导入、文档优化
-
-**完成工作**：
-
-**阶段 1: 阅读进度增强**
-- ✅ `ReadingProgress.jsx` - 底部进度条组件
-- ✅ `ProgressPanel` - 详细进度面板
-- ✅ `useReadingProgress` Hook - 进度计算
-- ✅ 剩余时间估算（基于阅读速度）
-
-**阶段 2: 文本高亮和笔记**
-- ✅ `highlight.js` Store - 高亮状态管理（5 种颜色）
-- ✅ `HighlightMenu.jsx` - 选择菜单 + 编辑菜单
-- ✅ `HighlightedContent.jsx` - 带高亮的内容渲染
-- ✅ `NotesPanel.jsx` - 笔记管理面板
-- ✅ Markdown 导出功能
-
-**阶段 3: 书籍标签分类**
-- ✅ `tags.js` Store - 标签管理（8 种颜色、4 种预设分类）
-- ✅ `TagComponents.jsx` - TagBadge、TagSelector、CategorySelector、FavoriteButton、FilterBar
-- ✅ Library 页面集成筛选功能
-- ✅ BookCard 显示收藏按钮和标签
-
-**阶段 4: 数据导入功能**
-- ✅ `importBackupData()` - 支持选择性导入
-- ✅ `previewBackupFile()` - 备份预览
-- ✅ Settings 页面 ImportSection 组件
-- ✅ 导入选项（覆盖/跳过特定数据）
-
-**阶段 5: 文档审计优化**
-- ✅ 更新 CONTEXT.md（stores 数量、组件数量、新功能）
-- ✅ 更新 components.md（添加所有新组件）
-- ✅ 更新 vision.md、ROADMAP.md（导出功能已完成）
-- ✅ 更新 CURRENT.md（Day 3 日志）
-
----
-
 ### Day 2 - 2025-12-04（周四）⭐ Spring Boot 后端 + 前后端对接
 
 **工作时长**: 全天

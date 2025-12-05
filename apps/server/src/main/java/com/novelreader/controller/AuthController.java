@@ -48,4 +48,12 @@ public class AuthController {
         AuthResponse.UserInfo userInfo = authService.getCurrentUser(userDetails.getId());
         return ResponseEntity.ok(ApiResponse.success(userInfo));
     }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "刷新 Token", description = "使用有效的 Token 换取新 Token")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        AuthResponse response = authService.refreshToken(userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.success("Token 刷新成功", response));
+    }
 }

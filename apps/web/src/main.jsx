@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router-dom'
 import { router, preloadCorePages } from './router'
 import { useThemeStore } from './stores/theme'
 import useAuthStore from './stores/auth'
+import ErrorBoundary from './components/ui/ErrorBoundary'
 import './index.css'
 
 // 初始化主题
@@ -14,7 +15,9 @@ useAuthStore.getState().checkAuth()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ErrorBoundary>
+      <RouterProvider router={router} />
+    </ErrorBoundary>
   </React.StrictMode>,
 )
 

@@ -6,6 +6,7 @@
  */
 
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { booksStore } from './db'
 
 /**
@@ -61,7 +62,9 @@ function generateSearchId() {
 /**
  * 搜索 Store
  */
-export const useSearchStore = create((set, get) => ({
+export const useSearchStore = create(
+  persist(
+    (set, get) => ({
   // 搜索状态
   query: '',
   isSearching: false,
@@ -87,6 +90,12 @@ export const useSearchStore = create((set, get) => ({
 
   // 搜索历史
   history: [],
+
+  // 保存的搜索
+  savedSearches: [],
+
+  // 搜索建议
+  suggestions: [],
 
   // 错误信息
   error: null,
@@ -305,4 +314,139 @@ export const useSearchStore = create((set, get) => ({
   clearHistory: () => {
     set({ history: [] })
   },
-}))
+
+  /**
+   * 保存搜索
+   */
+  saveSearch: (query, name = '') => {
+    set((state) => {
+      const exists = state.savedSearches.some((s) => s.query === query)
+      if (exists) return state
+
+      return {
+        savedSearches: [
+          ...state.savedSearches,
+          {
+            id: Date.now(),
+            query,
+            name: name || query,
+            options: { ...state.options },
+            searchMode: state.searchMode,
+            createdAt: new Date().toISOString(),
+          },
+        ].slice(0, 20), // 最多保存20条
+      }
+    })
+  },
+
+  /**
+   * 删除保存的搜索
+   */
+  removeSavedSearch: (id) => {
+    set((state) => ({
+      savedSearches: state.savedSearches.filter((s) => s.id !== id),
+    }))
+  },
+
+  /**
+   * 应用保存的搜索
+   */
+  applySavedSearch: (savedSearch) => {
+    set({
+      query: savedSearch.query,
+      options: savedSearch.options || {},
+      searchMode: savedSearch.searchMode || 'overview',
+    })
+    // 执行搜索
+    setTimeout(() => {
+      get().search(savedSearch.query)
+    }, 0)
+  },
+
+  /**
+   * 生成搜索建议（基于历史和已保存）
+   */
+  getSuggestions: (input) => {
+    if (!input || input.length < 1) {
+      set({ suggestions: [] })
+      return
+    }
+
+    const { history, savedSearches } = get()
+    const inputLower = input.toLowerCase()
+
+    // 从历史和保存的搜索中匹配
+    const fromHistory = history
+      .filter((h) => h.toLowerCase().includes(inputLower))
+      .map((h) => ({ type: 'history', text: h }))
+
+    const fromSaved = savedSearches
+      .filter((s) => s.query.toLowerCase().includes(inputLower))
+      .map((s) => ({ type: 'saved', text: s.query, name: s.name }))
+
+    // 去重并限制数量
+    const seen = new Set()
+    const suggestions = [...fromSaved, ...fromHistory]
+      .filter((s) => {
+        if (seen.has(s.text)) return false
+        seen.add(s.text)
+        return true
+      })
+      .slice(0, 8)
+
+    set({ suggestions })
+  },
+
+  /**
+   * 导出搜索结果
+   */
+  exportResults: () => {
+    const { query, results, searchMode, options } = get()
+    if (results.length === 0) return null
+
+    const exportData = {
+      query,
+      searchMode,
+      options,
+      exportedAt: new Date().toISOString(),
+      totalMatches: results.reduce((sum, r) => sum + r.totalMatches, 0),
+      results: results.map((r) => ({
+        bookTitle: r.bookTitle,
+        totalMatches: r.totalMatches,
+        chapters: r.chapters.map((ch) => ({
+          title: ch.chapterTitle,
+          count: ch.count,
+          matches: ch.matches?.map((m) => ({
+            line: m.lineNumber,
+            context: m.context,
+          })),
+        })),
+      })),
+    }
+
+    // 下载JSON
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `search-${query.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, '_')}-${Date.now()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+
+    return exportData
+  },
+    }),
+    {
+      name: 'novel-reader-search',
+      // 只持久化历史和保存的搜索
+      partialize: (state) => ({
+        history: state.history,
+        savedSearches: state.savedSearches,
+        searchMode: state.searchMode,
+        options: state.options,
+      }),
+    }
+  )
+)

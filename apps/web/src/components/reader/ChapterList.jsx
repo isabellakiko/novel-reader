@@ -79,6 +79,8 @@ export default function ChapterList({
                 ? 'bg-primary/10 text-primary font-medium'
                 : 'text-foreground'
             )}
+            aria-current={isCurrent ? 'true' : undefined}
+            aria-label={`${chapter.title}${isCurrent ? '（当前章节）' : ''}`}
           >
             <span className="line-clamp-1">{chapter.title}</span>
           </button>
@@ -120,9 +122,14 @@ export default function ChapterList({
         exit={{ opacity: 0, x: -20 }}
         className={cn(
           'h-full bg-card border-r border-border flex flex-col z-50',
-          // 移动端全屏，桌面端固定宽度
-          'fixed md:relative inset-y-0 left-0 w-[85vw] max-w-sm md:w-72'
+          // 超小屏幕 90vw，小屏幕 85vw，桌面端固定宽度
+          'fixed md:relative inset-y-0 left-0',
+          'w-[90vw] min-w-[240px] max-w-[320px]',
+          'sm:w-[85vw] sm:max-w-sm md:w-72'
         )}
+        role="dialog"
+        aria-modal="true"
+        aria-label="章节目录"
       >
         {/* 头部 */}
         <div className="flex-shrink-0 p-4 border-b border-border">
@@ -131,16 +138,17 @@ export default function ChapterList({
             <button
               onClick={onClose}
               className="p-1 rounded hover:bg-accent transition-colors"
+              aria-label="关闭目录"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
           {/* 搜索框 */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <div className="relative" role="search">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <input
-              type="text"
+              type="search"
               placeholder="搜索章节..."
               value={searchQuery || ''}
               onChange={(e) => onSearchChange?.(e.target.value)}
@@ -149,27 +157,30 @@ export default function ChapterList({
                 'bg-muted border border-transparent',
                 'focus:bg-background focus:border-primary focus:outline-none'
               )}
+              aria-label="搜索章节"
             />
           </div>
 
           {/* 章节统计和快捷操作 */}
-          <div className="flex items-center justify-between mt-2">
-            <p className="text-xs text-muted-foreground">
+          <div className="flex items-center justify-between mt-2 gap-2">
+            <p className="text-xs text-muted-foreground truncate flex-shrink min-w-0">
               共 {chapters.length} 章
-              {searchQuery && ` · 找到 ${filteredChapters.length} 章`}
+              {searchQuery && ` · ${filteredChapters.length} 匹配`}
             </p>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-shrink-0" role="group" aria-label="章节导航">
               <button
                 onClick={jumpToStart}
                 className="p-1 rounded hover:bg-accent text-muted-foreground"
                 title="跳到开头"
+                aria-label="跳到第一章"
               >
-                <ChevronUp className="w-4 h-4" />
+                <ChevronUp className="w-4 h-4" aria-hidden="true" />
               </button>
               <button
                 onClick={scrollToCurrentChapter}
                 className="px-2 py-0.5 text-xs rounded hover:bg-accent text-muted-foreground"
                 title="回到当前"
+                aria-label="回到当前章节"
               >
                 当前
               </button>
@@ -177,8 +188,9 @@ export default function ChapterList({
                 onClick={jumpToEnd}
                 className="p-1 rounded hover:bg-accent text-muted-foreground"
                 title="跳到结尾"
+                aria-label="跳到最后一章"
               >
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>

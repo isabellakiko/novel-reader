@@ -22,7 +22,8 @@ const api = axios.create({
 // 请求拦截器：添加 Token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    // 从 auth store 同步的独立 key 读取 token
+    const token = localStorage.getItem('auth-token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -42,8 +43,9 @@ api.interceptors.response.use(
 
       // Token 过期或无效
       if (status === 401) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
+        // 清理 auth store 的持久化数据
+        localStorage.removeItem('auth-storage')
+        localStorage.removeItem('auth-token')
         toast.warning('登录已过期，请重新登录')
         // 延迟跳转，让用户看到提示
         setTimeout(() => {
@@ -98,6 +100,11 @@ export const authApi = {
    * 获取当前用户信息
    */
   getMe: () => api.get('/auth/me'),
+
+  /**
+   * 刷新 Token
+   */
+  refresh: () => api.post('/auth/refresh'),
 }
 
 // ==================== 书籍 API ====================

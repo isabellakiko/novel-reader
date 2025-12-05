@@ -6,15 +6,18 @@
  */
 
 import { useEffect, useState, useCallback } from 'react'
-import { Search, Plus, BookOpen, Loader2, Cloud, HardDrive, RefreshCw } from 'lucide-react'
+import { Plus, BookOpen, Cloud, HardDrive, RefreshCw, Search, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLibraryStore } from '../stores/library'
 import { progressStore } from '../stores/db'
 import useAuthStore from '../stores/auth'
 import useSyncStore from '../stores/sync'
+import { useTagStore } from '../stores/tags'
 import FileUpload from '../components/FileUpload'
 import BookCard from '../components/BookCard'
+import { FilterBar } from '../components/library/TagComponents'
 import EmptyState, { NoSearchResults } from '../components/ui/EmptyState'
+import { BookListSkeleton } from '../components/ui/Skeleton'
 import { listContainerVariants, listItemVariants } from '../lib/animations'
 import { cn } from '../lib/utils'
 
@@ -30,11 +33,20 @@ export default function Library() {
   const { isAuthenticated } = useAuthStore()
   const { cloudBooks, syncBooks, isSyncing, uploadBook } = useSyncStore()
 
-  const [searchQuery, setSearchQuery] = useState('')
   const [showUpload, setShowUpload] = useState(false)
   const [readingProgress, setReadingProgress] = useState({})
   const [viewMode, setViewMode] = useState('all') // 'all' | 'local' | 'cloud'
   const [uploadMode, setUploadMode] = useState('local') // 'local' | 'cloud'
+
+  // 筛选状态
+  const [filters, setFilters] = useState({
+    search: '',
+    favoritesOnly: false,
+    category: null,
+    tagIds: [],
+  })
+
+  const { filterBooks: applyTagFilters, cleanupOrphanedData } = useTagStore()
 
   // 加载书籍列表和阅读进度
   useEffect(() => {
@@ -55,20 +67,27 @@ export default function Library() {
     ...cloudBooks.map((b) => ({ ...b, source: 'cloud' })),
   ]
 
-  // 过滤书籍
-  const filteredBooks = allBooks.filter((book) => {
-    // 来源筛选
-    if (viewMode === 'local' && book.source !== 'local') return false
-    if (viewMode === 'cloud' && book.source !== 'cloud') return false
+  // 清理无效的标签关联
+  useEffect(() => {
+    if (allBooks.length > 0) {
+      cleanupOrphanedData(allBooks.map((b) => b.id))
+    }
+  }, [allBooks.length])
 
-    // 搜索筛选
-    if (!searchQuery) return true
-    const query = searchQuery.toLowerCase()
-    return (
-      book.title.toLowerCase().includes(query) ||
-      book.author?.toLowerCase().includes(query)
-    )
-  })
+  // 过滤书籍
+  const filteredBooks = (() => {
+    // 先按来源筛选
+    let result = allBooks.filter((book) => {
+      if (viewMode === 'local' && book.source !== 'local') return false
+      if (viewMode === 'cloud' && book.source !== 'cloud') return false
+      return true
+    })
+
+    // 再应用标签和分类筛选
+    result = applyTagFilters(result, filters)
+
+    return result
+  })()
 
   // 处理文件选择
   const handleFileSelect = useCallback(
@@ -191,8 +210,8 @@ export default function Library() {
             <input
               type="text"
               placeholder="搜索书籍..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
               className={cn(
                 'w-full md:w-64 pl-9 pr-4 py-2 text-sm rounded-lg',
                 'bg-muted border border-transparent',
@@ -300,12 +319,18 @@ export default function Library() {
           )}
         </AnimatePresence>
 
-        {/* 加载状态 */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          </div>
+        {/* 筛选栏 */}
+        {!isLoading && allBooks.length > 0 && (
+          <FilterBar
+            filters={filters}
+            onFiltersChange={setFilters}
+            bookCount={filteredBooks.length}
+            totalCount={allBooks.length}
+          />
         )}
+
+        {/* 加载状态 - 骨架屏 */}
+        {isLoading && <BookListSkeleton count={12} />}
 
         {/* 空状态 */}
         {!isLoading && allBooks.length === 0 && (
@@ -326,7 +351,7 @@ export default function Library() {
 
         {/* 搜索无结果 */}
         {!isLoading && allBooks.length > 0 && filteredBooks.length === 0 && (
-          <NoSearchResults query={searchQuery} />
+          <NoSearchResults query={filters.search} />
         )}
 
         {/* 书籍网格 */}

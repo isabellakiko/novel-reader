@@ -1,10 +1,10 @@
 /**
  * 主题切换组件
  *
- * 支持四种主题：自动、白天、夜间、护眼
+ * 支持多种主题：自动、白天、夜间、暖黄、豆沙绿、薄荷蓝、暗紫
  */
 
-import { Sun, Moon, Eye, Monitor } from 'lucide-react'
+import { Sun, Moon, Eye, Monitor, Leaf, Droplets } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useThemeStore, THEMES } from '../stores/theme'
 import { cn } from '../lib/utils'
@@ -14,6 +14,9 @@ const icons = {
   light: Sun,
   dark: Moon,
   sepia: Eye,
+  green: Leaf,
+  mint: Droplets,
+  purple: Moon,
 }
 
 export default function ThemeToggle({ className }) {
@@ -31,6 +34,7 @@ export default function ThemeToggle({ className }) {
         className
       )}
       title={`当前: ${themeConfig.name} - 点击切换`}
+      aria-label={`切换主题，当前: ${themeConfig.name}`}
     >
       <AnimatePresence mode="wait">
         <motion.div
@@ -70,6 +74,8 @@ export function ThemeSelector({ className }) {
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             )}
+            aria-pressed={isActive}
+            aria-label={`${config.name}主题`}
           >
             <Icon className="w-4 h-4" />
             <span className="hidden sm:inline">{config.name}</span>

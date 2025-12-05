@@ -26,11 +26,29 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
     List<ReadingProgress> findByUserIdOrderByLastReadAtDesc(Long userId);
 
     /**
+     * 查询用户所有阅读进度（带 Book 信息，避免 N+1）
+     */
+    @Query("SELECT rp FROM ReadingProgress rp " +
+           "JOIN FETCH rp.book " +
+           "WHERE rp.user.id = :userId " +
+           "ORDER BY rp.lastReadAt DESC")
+    List<ReadingProgress> findByUserIdWithBook(@Param("userId") Long userId);
+
+    /**
      * 查询用户最近阅读的书籍
      */
     @Query("SELECT rp FROM ReadingProgress rp WHERE rp.user.id = :userId " +
            "ORDER BY rp.lastReadAt DESC")
     List<ReadingProgress> findRecentReading(@Param("userId") Long userId);
+
+    /**
+     * 查询用户最近阅读的书籍（带 Book 信息，避免 N+1）
+     */
+    @Query("SELECT rp FROM ReadingProgress rp " +
+           "JOIN FETCH rp.book " +
+           "WHERE rp.user.id = :userId " +
+           "ORDER BY rp.lastReadAt DESC")
+    List<ReadingProgress> findRecentReadingWithBook(@Param("userId") Long userId);
 
     /**
      * 删除书籍的所有阅读进度

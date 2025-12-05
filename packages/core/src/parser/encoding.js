@@ -55,8 +55,8 @@ function normalizeEncoding(encoding) {
 function detectBOM(bytes) {
   if (bytes.length < 2) return null
 
-  // UTF-8 BOM: EF BB BF
-  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+  // UTF-8 BOM: EF BB BF（需要至少 3 个字节）
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
     return 'utf-8'
   }
 
@@ -70,16 +70,25 @@ function detectBOM(bytes) {
     return 'utf-16be'
   }
 
+  // UTF-32 LE BOM: FF FE 00 00
+  if (bytes.length >= 4 && bytes[0] === 0xff && bytes[1] === 0xfe && bytes[2] === 0x00 && bytes[3] === 0x00) {
+    return 'utf-32le'
+  }
+
   return null
 }
 
 /**
  * 检查是否为有效的 UTF-8 序列
+ * 包含对非法序列和超长编码的检测
  * @param {Uint8Array} bytes
  * @returns {boolean}
  */
 function isValidUTF8(bytes) {
   let i = 0
+  let invalidCount = 0
+  const maxInvalid = Math.max(1, Math.floor(bytes.length * 0.001)) // 允许 0.1% 的错误
+
   while (i < bytes.length) {
     const byte = bytes[i]
 
@@ -89,91 +98,179 @@ function isValidUTF8(bytes) {
       continue
     }
 
+    // 检测非法的起始字节
+    // 0x80-0xBF: 这些是后续字节，不能作为起始
+    // 0xC0-0xC1: 非法（会产生超长编码）
+    // 0xF5-0xFF: 非法（超出 Unicode 范围）
+    if (byte >= 0x80 && byte <= 0xbf) {
+      invalidCount++
+      i++
+      continue
+    }
+    if (byte === 0xc0 || byte === 0xc1 || byte >= 0xf5) {
+      invalidCount++
+      i++
+      continue
+    }
+
     // 多字节序列的起始字节
     let expectedBytes = 0
+    let minCodePoint = 0
+
     if ((byte & 0xe0) === 0xc0) {
-      // 2字节序列 (110xxxxx)
+      // 2字节序列 (110xxxxx) - 范围 U+0080 到 U+07FF
       expectedBytes = 2
+      minCodePoint = 0x80
     } else if ((byte & 0xf0) === 0xe0) {
-      // 3字节序列 (1110xxxx)
+      // 3字节序列 (1110xxxx) - 范围 U+0800 到 U+FFFF
       expectedBytes = 3
+      minCodePoint = 0x800
     } else if ((byte & 0xf8) === 0xf0) {
-      // 4字节序列 (11110xxx)
+      // 4字节序列 (11110xxx) - 范围 U+10000 到 U+10FFFF
       expectedBytes = 4
+      minCodePoint = 0x10000
     } else {
-      // 无效的起始字节
-      return false
+      // 其他无效的起始字节
+      invalidCount++
+      i++
+      continue
     }
 
-    // 检查后续字节
+    // 检查后续字节是否足够
     if (i + expectedBytes > bytes.length) {
-      return false
+      invalidCount++
+      break
     }
+
+    // 检查后续字节格式（必须是 10xxxxxx）
+    let valid = true
+    let codePoint = byte & (0xff >> (expectedBytes + 1))
 
     for (let j = 1; j < expectedBytes; j++) {
-      if ((bytes[i + j] & 0xc0) !== 0x80) {
-        // 后续字节必须是 10xxxxxx
-        return false
+      const nextByte = bytes[i + j]
+      if ((nextByte & 0xc0) !== 0x80) {
+        valid = false
+        break
       }
+      codePoint = (codePoint << 6) | (nextByte & 0x3f)
+    }
+
+    if (!valid) {
+      invalidCount++
+      i++
+      continue
+    }
+
+    // 检查超长编码（overlong encoding）
+    if (codePoint < minCodePoint) {
+      invalidCount++
+      i += expectedBytes
+      continue
+    }
+
+    // 检查是否在有效的 Unicode 范围内
+    // 排除代理对范围 (U+D800 到 U+DFFF) 和超出最大值
+    if ((codePoint >= 0xd800 && codePoint <= 0xdfff) || codePoint > 0x10ffff) {
+      invalidCount++
+      i += expectedBytes
+      continue
     }
 
     i += expectedBytes
   }
 
-  return true
+  // 如果无效字节太多，认为不是有效的 UTF-8
+  return invalidCount <= maxInvalid
 }
 
 /**
  * 计算文本中中文字符的比例和有效性
  * @param {string} text
- * @returns {{ ratio: number, hasGarbage: boolean }}
+ * @returns {{ ratio: number, hasGarbage: boolean, consecutiveGarbage: number }}
  */
 function analyzeChineseText(text) {
   if (!text || text.length === 0) {
-    return { ratio: 0, hasGarbage: false }
+    return { ratio: 0, hasGarbage: false, consecutiveGarbage: 0 }
   }
 
   let chineseCount = 0
   let garbageCount = 0
   let totalValid = 0
+  let consecutiveGarbage = 0
+  let maxConsecutiveGarbage = 0
 
   for (const char of text) {
     const code = char.charCodeAt(0)
 
-    // 中文字符范围 (CJK Unified Ideographs)
+    // CJK 统一表意文字（基本区）
     if (code >= 0x4e00 && code <= 0x9fff) {
       chineseCount++
       totalValid++
+      consecutiveGarbage = 0
     }
-    // 常见标点和ASCII
-    else if (code <= 0x7f || (code >= 0x3000 && code <= 0x303f)) {
-      totalValid++
-    }
-    // 其他CJK扩展
-    else if (
-      (code >= 0x3400 && code <= 0x4dbf) ||
-      (code >= 0x20000 && code <= 0x2a6df)
-    ) {
+    // CJK 扩展 A
+    else if (code >= 0x3400 && code <= 0x4dbf) {
       chineseCount++
       totalValid++
+      consecutiveGarbage = 0
+    }
+    // 日语平假名
+    else if (code >= 0x3040 && code <= 0x309f) {
+      chineseCount++ // 也算作东亚文字
+      totalValid++
+      consecutiveGarbage = 0
+    }
+    // 日语片假名
+    else if (code >= 0x30a0 && code <= 0x30ff) {
+      chineseCount++
+      totalValid++
+      consecutiveGarbage = 0
+    }
+    // 韩文音节
+    else if (code >= 0xac00 && code <= 0xd7af) {
+      chineseCount++
+      totalValid++
+      consecutiveGarbage = 0
+    }
+    // 常见标点和 ASCII
+    else if (code <= 0x7f || (code >= 0x3000 && code <= 0x303f)) {
+      totalValid++
+      consecutiveGarbage = 0
+    }
+    // 中文全角标点和符号
+    else if (code >= 0xff00 && code <= 0xffef) {
+      totalValid++
+      consecutiveGarbage = 0
     }
     // 替换字符（解码失败的标志）
     else if (code === 0xfffd) {
       garbageCount++
+      consecutiveGarbage++
+      maxConsecutiveGarbage = Math.max(maxConsecutiveGarbage, consecutiveGarbage)
     }
-    // 中文全角标点
-    else if (code >= 0xff00 && code <= 0xffef) {
-      totalValid++
+    // 控制字符（除了常见的换行等）
+    else if (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d) {
+      garbageCount++
+      consecutiveGarbage++
+      maxConsecutiveGarbage = Math.max(maxConsecutiveGarbage, consecutiveGarbage)
     }
-    // 其他
+    // 其他有效字符
     else {
       totalValid++
+      consecutiveGarbage = 0
     }
   }
 
+  // 乱码判定条件更严格：
+  // 1. 乱码比例超过 0.5%
+  // 2. 或连续乱码超过 3 个字符
+  const garbageRatio = text.length > 0 ? garbageCount / text.length : 0
+  const hasGarbage = garbageRatio > 0.005 || maxConsecutiveGarbage > 3
+
   return {
     ratio: totalValid > 0 ? chineseCount / totalValid : 0,
-    hasGarbage: garbageCount > text.length * 0.01, // 超过1%的乱码
+    hasGarbage,
+    consecutiveGarbage: maxConsecutiveGarbage,
   }
 }
 
@@ -237,21 +334,48 @@ export function detectEncoding(buffer) {
   const candidates = ['gbk', 'gb18030', 'big5']
   let bestEncoding = 'utf-8'
   let bestScore = 0
+  let bestResult = null
 
   for (const encoding of candidates) {
     const result = tryDecode(sample, encoding)
     if (result && result.score > bestScore) {
       bestScore = result.score
       bestEncoding = encoding
+      bestResult = result
     }
   }
 
-  // 如果GBK类编码得分很高，使用它
-  if (bestScore > 0.1) {
-    return { encoding: bestEncoding, confidence: Math.min(bestScore * 2, 0.9) }
+  // 同时尝试 UTF-8 解码作为对比
+  const utf8Result = tryDecode(sample, 'utf-8')
+  const utf8Score = utf8Result ? utf8Result.score : 0
+
+  // 选择策略：
+  // 1. 如果 GBK 类编码的中文比例明显更高，使用它
+  // 2. 如果差不多，优先选择 UTF-8（更通用）
+  // 3. 阈值提高到 0.15，避免对低中文内容误判
+
+  if (bestScore > 0.15 && bestScore > utf8Score * 1.2) {
+    // 置信度计算：基于得分的非线性映射
+    // score 0.15-0.3 -> confidence 0.6-0.75
+    // score 0.3-0.6 -> confidence 0.75-0.9
+    // score 0.6+ -> confidence 0.9
+    let confidence
+    if (bestScore >= 0.6) {
+      confidence = 0.9
+    } else if (bestScore >= 0.3) {
+      confidence = 0.75 + (bestScore - 0.3) * 0.5
+    } else {
+      confidence = 0.6 + (bestScore - 0.15) * 1.0
+    }
+    return { encoding: bestEncoding, confidence }
   }
 
-  // 默认使用 UTF-8
+  // 如果 UTF-8 有合理的中文内容，优先使用
+  if (utf8Score > 0.1) {
+    return { encoding: 'utf-8', confidence: 0.7 + utf8Score * 0.2 }
+  }
+
+  // 默认使用 UTF-8，但置信度较低
   return { encoding: 'utf-8', confidence: 0.5 }
 }
 

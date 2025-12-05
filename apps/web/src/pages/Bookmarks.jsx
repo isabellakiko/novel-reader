@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useBookmarkStore } from '../stores/bookmark'
 import EmptyState from '../components/ui/EmptyState'
+import { BookmarkListSkeleton } from '../components/ui/Skeleton'
 import { cn } from '../lib/utils'
 
 /**
@@ -246,12 +247,8 @@ export default function Bookmarks() {
       {/* 主内容区 */}
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-3xl mx-auto">
-          {/* 加载中 */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            </div>
-          )}
+          {/* 加载中 - 骨架屏 */}
+          {isLoading && <BookmarkListSkeleton count={5} />}
 
           {/* 空状态 */}
           {!isLoading && allBookmarks.length === 0 && (

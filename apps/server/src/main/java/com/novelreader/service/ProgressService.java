@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -81,9 +82,17 @@ public class ProgressService {
      * 获取用户所有阅读进度
      */
     public List<ProgressDTO> getAllProgress(Long userId) {
-        return progressRepository.findByUserIdOrderByLastReadAtDesc(userId)
-            .stream()
-            .map(p -> toProgressDTO(p, p.getBook()))
+        // 使用 JOIN FETCH 避免 N+1
+        List<ReadingProgress> progressList = progressRepository.findByUserIdWithBook(userId);
+        if (progressList.isEmpty()) {
+            return List.of();
+        }
+
+        // 批量获取章节标题
+        Map<String, String> chapterTitleMap = batchGetChapterTitles(progressList);
+
+        return progressList.stream()
+            .map(p -> toProgressDTOWithCache(p, p.getBook(), chapterTitleMap))
             .collect(Collectors.toList());
     }
 
@@ -91,11 +100,62 @@ public class ProgressService {
      * 获取最近阅读
      */
     public List<ProgressDTO> getRecentReading(Long userId, int limit) {
-        return progressRepository.findRecentReading(userId)
+        // 使用 JOIN FETCH 避免 N+1
+        List<ReadingProgress> progressList = progressRepository.findRecentReadingWithBook(userId)
             .stream()
             .limit(limit)
-            .map(p -> toProgressDTO(p, p.getBook()))
             .collect(Collectors.toList());
+
+        if (progressList.isEmpty()) {
+            return List.of();
+        }
+
+        // 批量获取章节标题
+        Map<String, String> chapterTitleMap = batchGetChapterTitles(progressList);
+
+        return progressList.stream()
+            .map(p -> toProgressDTOWithCache(p, p.getBook(), chapterTitleMap))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * 批量获取章节标题，避免 N+1 查询
+     */
+    private Map<String, String> batchGetChapterTitles(List<ReadingProgress> progressList) {
+        // 收集所有需要查询的 (bookId, chapterIndex) 对
+        List<Long> bookIds = progressList.stream()
+            .map(p -> p.getBook().getId())
+            .distinct()
+            .collect(Collectors.toList());
+
+        // 批量查询所有相关章节
+        List<Chapter> chapters = chapterRepository.findByBookIdIn(bookIds);
+
+        // 构建 "bookId-chapterIndex" -> title 的映射
+        return chapters.stream()
+            .collect(Collectors.toMap(
+                c -> c.getBook().getId() + "-" + c.getChapterIndex(),
+                Chapter::getTitle,
+                (existing, replacement) -> existing // 处理重复键
+            ));
+    }
+
+    /**
+     * 使用缓存的章节标题构建 ProgressDTO
+     */
+    private ProgressDTO toProgressDTOWithCache(ReadingProgress progress, Book book, Map<String, String> chapterTitleMap) {
+        String key = book.getId() + "-" + progress.getChapterIndex();
+        String chapterTitle = chapterTitleMap.getOrDefault(key, "第" + (progress.getChapterIndex() + 1) + "章");
+
+        return ProgressDTO.builder()
+            .bookId(book.getId())
+            .bookTitle(book.getTitle())
+            .chapterIndex(progress.getChapterIndex())
+            .chapterTitle(chapterTitle)
+            .scrollPosition(progress.getScrollPosition())
+            .progressPercent(progress.getProgressPercent())
+            .lastReadAt(progress.getLastReadAt())
+            .build();
     }
 
     // ==================== 书签 ====================
@@ -145,18 +205,76 @@ public class ProgressService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Bookmark> bookmarkPage = bookmarkRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
 
-        List<BookmarkDTO> bookmarks = bookmarkPage.getContent().stream()
-            .map(b -> toBookmarkDTO(b, b.getBook()))
+        List<Bookmark> bookmarks = bookmarkPage.getContent();
+        if (bookmarks.isEmpty()) {
+            return PageResponse.<BookmarkDTO>builder()
+                .content(List.of())
+                .page(bookmarkPage.getNumber())
+                .size(bookmarkPage.getSize())
+                .totalElements(bookmarkPage.getTotalElements())
+                .totalPages(bookmarkPage.getTotalPages())
+                .first(bookmarkPage.isFirst())
+                .last(bookmarkPage.isLast())
+                .build();
+        }
+
+        // 批量获取 Book 信息，避免 N+1
+        List<Long> bookIds = bookmarks.stream()
+            .map(b -> b.getBook().getId())
+            .distinct()
+            .collect(Collectors.toList());
+        Map<Long, Book> bookMap = bookRepository.findAllById(bookIds).stream()
+            .collect(Collectors.toMap(Book::getId, b -> b));
+
+        // 批量获取章节标题
+        Map<String, String> chapterTitleMap = batchGetChapterTitlesForBookmarks(bookmarks, bookIds);
+
+        List<BookmarkDTO> bookmarkDTOs = bookmarks.stream()
+            .map(b -> toBookmarkDTOWithCache(b, bookMap.get(b.getBook().getId()), chapterTitleMap))
             .collect(Collectors.toList());
 
         return PageResponse.<BookmarkDTO>builder()
-            .content(bookmarks)
+            .content(bookmarkDTOs)
             .page(bookmarkPage.getNumber())
             .size(bookmarkPage.getSize())
             .totalElements(bookmarkPage.getTotalElements())
             .totalPages(bookmarkPage.getTotalPages())
             .first(bookmarkPage.isFirst())
             .last(bookmarkPage.isLast())
+            .build();
+    }
+
+    /**
+     * 批量获取书签的章节标题
+     */
+    private Map<String, String> batchGetChapterTitlesForBookmarks(List<Bookmark> bookmarks, List<Long> bookIds) {
+        List<Chapter> chapters = chapterRepository.findByBookIdIn(bookIds);
+        return chapters.stream()
+            .collect(Collectors.toMap(
+                c -> c.getBook().getId() + "-" + c.getChapterIndex(),
+                Chapter::getTitle,
+                (existing, replacement) -> existing
+            ));
+    }
+
+    /**
+     * 使用缓存构建 BookmarkDTO
+     */
+    private BookmarkDTO toBookmarkDTOWithCache(Bookmark bookmark, Book book, Map<String, String> chapterTitleMap) {
+        String key = book.getId() + "-" + bookmark.getChapterIndex();
+        String chapterTitle = chapterTitleMap.getOrDefault(key, "第" + (bookmark.getChapterIndex() + 1) + "章");
+
+        return BookmarkDTO.builder()
+            .id(bookmark.getId())
+            .bookId(book.getId())
+            .bookTitle(book.getTitle())
+            .chapterIndex(bookmark.getChapterIndex())
+            .chapterTitle(chapterTitle)
+            .position(bookmark.getPosition())
+            .selectedText(bookmark.getSelectedText())
+            .note(bookmark.getNote())
+            .color(bookmark.getColor())
+            .createdAt(bookmark.getCreatedAt())
             .build();
     }
 

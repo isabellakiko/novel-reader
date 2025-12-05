@@ -14,6 +14,7 @@ import {
   X,
   Bookmark,
   BookmarkCheck,
+  Highlighter,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useReaderStore } from '../stores/reader'
@@ -21,8 +22,19 @@ import { useBookmarkStore } from '../stores/bookmark'
 import { useStatsStore } from '../stores/stats'
 import ChapterList from '../components/reader/ChapterList'
 import ReaderSettings from '../components/reader/ReaderSettings'
+import VirtualizedContent from '../components/reader/VirtualizedContent'
+import HighlightedContent from '../components/reader/HighlightedContent'
+import NotesPanel from '../components/reader/NotesPanel'
 import { HighlightQuery } from '../components/search/HighlightedText'
+import {
+  BottomProgressBar,
+  ProgressPanel,
+  MiniProgress,
+  useReadingProgress,
+} from '../components/reader/ReadingProgress'
+import { useHighlightStore } from '../stores/highlight'
 import { cn } from '../lib/utils'
+import { ReaderContentSkeleton } from '../components/ui/Skeleton'
 
 // 字体映射
 const FONT_FAMILY_MAP = {
@@ -66,8 +78,15 @@ export default function Reader() {
   // UI 状态
   const [showChapterList, setShowChapterList] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showProgressPanel, setShowProgressPanel] = useState(false)
+  const [showNotesPanel, setShowNotesPanel] = useState(false)
   const [chapterSearch, setChapterSearch] = useState('')
   const [bookmarkToast, setBookmarkToast] = useState(null)
+  const [currentScrollPercent, setCurrentScrollPercent] = useState(0)
+  const [highlightVersion, setHighlightVersion] = useState(0) // 用于触发高亮重新渲染
+
+  // 高亮 store
+  const { getStats: getHighlightStats } = useHighlightStore()
 
   // 从 URL 获取高亮关键词和位置
   const highlightQuery = searchParams.get('highlight')
@@ -126,6 +145,9 @@ export default function Reader() {
   const chapterBookmarks = useMemo(() => {
     return getChapterBookmarks(currentChapterIndex)
   }, [getChapterBookmarks, currentChapterIndex, bookmarks])
+
+  // 阅读进度计算
+  const progressStats = useReadingProgress(book, currentChapterIndex, currentScrollPercent)
 
   // 添加书签
   const handleAddBookmark = useCallback(async () => {
@@ -205,29 +227,32 @@ export default function Reader() {
     }
   }, [currentChapterIndex, highlightQuery, scrollPosition])
 
-  // 滚动时保存进度（防抖）
+  // 滚动时保存进度（防抖）+ 实时更新进度显示
   useEffect(() => {
     const container = contentRef.current
     if (!container || !book) return
 
     const handleScroll = () => {
-      // 清除之前的定时器
-      if (scrollSaveTimerRef.current) {
-        clearTimeout(scrollSaveTimerRef.current)
-      }
+      const scrollTop = container.scrollTop
+      const scrollHeight = container.scrollHeight
+      const clientHeight = container.clientHeight
+      const maxScroll = scrollHeight - clientHeight
 
-      // 1秒后保存（防抖）
-      scrollSaveTimerRef.current = setTimeout(() => {
-        const scrollTop = container.scrollTop
-        const scrollHeight = container.scrollHeight
-        const clientHeight = container.clientHeight
-        const maxScroll = scrollHeight - clientHeight
+      if (maxScroll > 0) {
+        const percent = Math.round((scrollTop / maxScroll) * 100)
+        // 实时更新进度显示
+        setCurrentScrollPercent(percent)
 
-        if (maxScroll > 0) {
-          const percent = Math.round((scrollTop / maxScroll) * 100)
-          saveScrollPosition(percent)
+        // 清除之前的定时器
+        if (scrollSaveTimerRef.current) {
+          clearTimeout(scrollSaveTimerRef.current)
         }
-      }, 1000)
+
+        // 1秒后保存（防抖）
+        scrollSaveTimerRef.current = setTimeout(() => {
+          saveScrollPosition(percent)
+        }, 1000)
+      }
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
@@ -280,6 +305,79 @@ export default function Reader() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [prevChapter, nextChapter])
 
+  // 触摸手势处理
+  const touchStartRef = useRef(null)
+  const lastTapRef = useRef(0)
+  const swipeThreshold = 80 // 最小滑动距离
+  const swipeVerticalLimit = 100 // 垂直移动限制
+  const doubleTapDelay = 300 // 双击间隔
+
+  // 字体大小预设
+  const fontSizePresets = [14, 16, 18, 20, 22, 24]
+
+  const handleTouchStart = useCallback((e) => {
+    const touch = e.touches[0]
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
+    }
+  }, [])
+
+  // 双击切换字体大小
+  const handleDoubleTap = useCallback(() => {
+    const currentSize = settings.fontSize || 18
+    const currentIndex = fontSizePresets.findIndex((s) => s >= currentSize)
+    const nextIndex = (currentIndex + 1) % fontSizePresets.length
+    updateSettings({ fontSize: fontSizePresets[nextIndex] })
+  }, [settings.fontSize, updateSettings])
+
+  const handleTouchEnd = useCallback(
+    (e) => {
+      if (!touchStartRef.current) return
+
+      const touch = e.changedTouches[0]
+      const deltaX = touch.clientX - touchStartRef.current.x
+      const deltaY = touch.clientY - touchStartRef.current.y
+      const deltaTime = Date.now() - touchStartRef.current.time
+      const now = Date.now()
+
+      // 重置
+      touchStartRef.current = null
+
+      // 检测点击（移动距离小于10px且时间短于200ms）
+      const isTap = Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && deltaTime < 200
+
+      if (isTap) {
+        // 检测双击
+        if (now - lastTapRef.current < doubleTapDelay) {
+          handleDoubleTap()
+          lastTapRef.current = 0
+          return
+        }
+        lastTapRef.current = now
+        return
+      }
+
+      // 忽略过慢的滑动（>500ms）或垂直滑动
+      if (deltaTime > 500 || Math.abs(deltaY) > swipeVerticalLimit) {
+        return
+      }
+
+      // 检测水平滑动
+      if (Math.abs(deltaX) > swipeThreshold) {
+        if (deltaX > 0 && canGoPrev) {
+          // 右滑 = 上一章
+          prevChapter()
+        } else if (deltaX < 0 && canGoNext) {
+          // 左滑 = 下一章
+          nextChapter()
+        }
+      }
+    },
+    [canGoPrev, canGoNext, prevChapter, nextChapter, handleDoubleTap]
+  )
+
   // 未选择书籍
   if (!bookId) {
     return (
@@ -297,11 +395,18 @@ export default function Reader() {
     )
   }
 
-  // 加载中
+  // 加载中 - 骨架屏
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="h-full bg-background">
+        <div className="h-12 border-b border-border flex items-center justify-between px-4">
+          <div className="animate-pulse w-20 h-6 bg-muted rounded" />
+          <div className="animate-pulse w-32 h-4 bg-muted rounded" />
+          <div className="animate-pulse w-20 h-6 bg-muted rounded" />
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <ReaderContentSkeleton />
+        </div>
       </div>
     )
   }
@@ -378,13 +483,15 @@ export default function Reader() {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center flex flex-col items-center">
             <p className="text-sm font-medium line-clamp-1 max-w-xs">
               {currentChapter?.title || book.title}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {currentChapterIndex + 1} / {book.chapters.length}
-            </p>
+            <MiniProgress
+              bookProgress={progressStats.bookProgress}
+              remainingTime={progressStats.remainingChars / 500}
+              className="mt-0.5"
+            />
           </div>
 
           <div className="flex items-center gap-2">
@@ -402,6 +509,21 @@ export default function Reader() {
                 <BookmarkCheck className="w-5 h-5" />
               ) : (
                 <Bookmark className="w-5 h-5" />
+              )}
+            </button>
+            <button
+              onClick={() => setShowNotesPanel(!showNotesPanel)}
+              className={cn(
+                'p-2 rounded-lg transition-colors relative',
+                showNotesPanel ? 'bg-accent' : 'hover:bg-accent'
+              )}
+              title="笔记和高亮"
+            >
+              <Highlighter className="w-5 h-5" />
+              {book && getHighlightStats(book.id).total > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                  {getHighlightStats(book.id).total > 9 ? '9+' : getHighlightStats(book.id).total}
+                </span>
               )}
             </button>
             <button
@@ -444,6 +566,8 @@ export default function Reader() {
             backgroundColor: settings.backgroundColor || undefined,
             color: settings.textColor || undefined,
           }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {/* 搜索高亮提示条 */}
           <AnimatePresence>
@@ -479,32 +603,31 @@ export default function Reader() {
               </h1>
             )}
 
-            {/* 章节内容 */}
-            <article
-              className="reading-content"
-              style={{
-                fontSize: settings.fontSize,
-                lineHeight: settings.lineHeight,
-                fontFamily: FONT_FAMILY_MAP[settings.fontFamily] || FONT_FAMILY_MAP.serif,
-              }}
-            >
-              {currentChapter?.lines.map((line, index) => (
-                <p
-                  key={index}
-                  className="indent-8"
-                  style={{
-                    marginBottom: `${settings.paragraphSpacing || 1.5}em`,
-                    textAlign: settings.textAlign || 'left',
-                  }}
-                >
-                  {highlightQuery ? (
-                    <HighlightQuery text={line} query={highlightQuery} />
-                  ) : (
-                    line
-                  )}
-                </p>
-              ))}
-            </article>
+            {/* 章节内容 - 小章节支持高亮，大章节使用虚拟化 */}
+            {currentChapter && (
+              <div
+                style={{
+                  fontFamily: FONT_FAMILY_MAP[settings.fontFamily] || FONT_FAMILY_MAP.serif,
+                }}
+              >
+                {currentChapter.lines.length <= 200 && !highlightQuery ? (
+                  <HighlightedContent
+                    key={`${currentChapterIndex}-${highlightVersion}`}
+                    lines={currentChapter.lines}
+                    settings={settings}
+                    bookId={book.id}
+                    chapterIndex={currentChapterIndex}
+                    onHighlightChange={() => setHighlightVersion((v) => v + 1)}
+                  />
+                ) : (
+                  <VirtualizedContent
+                    lines={currentChapter.lines}
+                    settings={settings}
+                    highlightQuery={highlightQuery}
+                  />
+                )}
+              </div>
+            )}
 
             {/* 章节导航 */}
             <div className="mt-12 pt-8 border-t border-border flex items-center justify-between">
@@ -554,6 +677,45 @@ export default function Reader() {
             settings={settings}
             onUpdate={updateSettings}
             onClose={() => setShowSettings(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 底部进度条 */}
+      <BottomProgressBar
+        chapterProgress={progressStats.chapterProgress}
+        bookProgress={progressStats.bookProgress}
+        onClick={() => setShowProgressPanel(true)}
+      />
+
+      {/* 进度详情面板 */}
+      <ProgressPanel
+        isOpen={showProgressPanel}
+        onClose={() => setShowProgressPanel(false)}
+        chapterProgress={progressStats.chapterProgress}
+        bookProgress={progressStats.bookProgress}
+        currentChapter={progressStats.currentChapter}
+        totalChapters={progressStats.totalChapters}
+        chapterChars={progressStats.chapterChars}
+        readChars={progressStats.readChars}
+        totalChars={progressStats.totalChars}
+        remainingChars={progressStats.remainingChars}
+      />
+
+      {/* 笔记面板 */}
+      <AnimatePresence>
+        {showNotesPanel && (
+          <NotesPanel
+            isOpen={showNotesPanel}
+            onClose={() => setShowNotesPanel(false)}
+            bookId={book?.id}
+            bookTitle={book?.title}
+            onNavigateToHighlight={(highlight) => {
+              // 跳转到高亮所在章节
+              if (highlight.chapterIndex !== currentChapterIndex) {
+                goToChapter(highlight.chapterIndex)
+              }
+            }}
           />
         )}
       </AnimatePresence>

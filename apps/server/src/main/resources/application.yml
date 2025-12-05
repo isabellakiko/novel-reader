@@ -47,9 +47,18 @@ server:
     context-path: /api
 
 # JWT 配置
+# 生产环境必须设置 JWT_SECRET 环境变量（至少 48 字符）
 jwt:
-  secret: ${JWT_SECRET:novel-reader-dev-secret-key-change-in-production-2024}
+  secret: ${JWT_SECRET:novel-reader-dev-secret-key-for-local-development-only-change-in-production-2024}
   expiration: 86400000 # 24小时
+
+# 限流配置
+rate-limit:
+  enabled: true
+  requests-per-minute: 60          # 全局限制
+  login-requests-per-minute: 10    # 登录接口限制（防暴力破解）
+  register-requests-per-minute: 5  # 注册接口限制
+  upload-requests-per-minute: 10   # 上传接口限制
 
 # 日志配置
 logging:

@@ -43,4 +43,16 @@ public interface ChapterRepository extends JpaRepository<Chapter, Long> {
      * 统计书籍章节数量
      */
     long countByBookId(Long bookId);
+
+    /**
+     * 批量查询章节标题（用于避免 N+1 查询）
+     */
+    @Query("SELECT c FROM Chapter c WHERE c.book.id = :bookId AND c.chapterIndex IN :indices")
+    List<Chapter> findByBookIdAndChapterIndexIn(@Param("bookId") Long bookId, @Param("indices") List<Integer> indices);
+
+    /**
+     * 批量查询多本书的章节标题
+     */
+    @Query("SELECT c FROM Chapter c WHERE c.book.id IN :bookIds")
+    List<Chapter> findByBookIdIn(@Param("bookIds") List<Long> bookIds);
 }

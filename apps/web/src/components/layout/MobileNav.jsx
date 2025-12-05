@@ -17,10 +17,13 @@ const navItems = [
 
 export default function MobileNav() {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border safe-area-bottom">
-      <ul className="flex items-center justify-around h-14">
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border safe-area-bottom"
+      aria-label="主导航"
+    >
+      <ul className="flex items-center justify-around h-14" role="menubar">
         {navItems.map((item) => (
-          <li key={item.to} className="flex-1">
+          <li key={item.to} className="flex-1" role="none">
             <NavLink
               to={item.to}
               className={({ isActive }) =>
@@ -31,6 +34,8 @@ export default function MobileNav() {
                     : 'text-muted-foreground'
                 )
               }
+              role="menuitem"
+              aria-label={item.label}
             >
               {({ isActive }) => (
                 <>

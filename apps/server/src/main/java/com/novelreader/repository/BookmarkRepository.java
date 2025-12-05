@@ -4,6 +4,8 @@ import com.novelreader.entity.Bookmark;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -24,6 +26,15 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
      * 查询用户所有书签（分页）
      */
     Page<Bookmark> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    /**
+     * 查询用户所有书签（带 Book 信息，避免 N+1）
+     */
+    @Query("SELECT b FROM Bookmark b " +
+           "JOIN FETCH b.book " +
+           "WHERE b.user.id = :userId " +
+           "ORDER BY b.createdAt DESC")
+    List<Bookmark> findByUserIdWithBook(@Param("userId") Long userId);
 
     /**
      * 根据ID和用户ID查询书签
