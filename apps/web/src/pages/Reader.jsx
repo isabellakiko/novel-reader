@@ -133,6 +133,13 @@ export default function Reader() {
     }
   }, [book, currentChapterIndex])
 
+  // 章节导航状态（需要在 handleTouchEnd 之前定义）
+  const canGoPrev = useMemo(() => currentChapterIndex > 0, [currentChapterIndex])
+  const canGoNext = useMemo(
+    () => book && currentChapterIndex < book.chapters.length - 1,
+    [book, currentChapterIndex]
+  )
+
   // 阅读统计：追踪阅读字数（章节切换时计算）
   useEffect(() => {
     if (currentChapter?.lines) {
@@ -436,9 +443,6 @@ export default function Reader() {
       </div>
     )
   }
-
-  const canGoPrev = currentChapterIndex > 0
-  const canGoNext = currentChapterIndex < book.chapters.length - 1
 
   return (
     <div className="h-full flex">
