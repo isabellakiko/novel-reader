@@ -41,6 +41,9 @@
 - ✅ **书籍标签分类系统**（自定义标签、收藏、筛选）
 - ✅ **阅读进度增强**（底部进度条、剩余时间估算）
 - ✅ **数据导入导出**（完整备份恢复、选择性导入）
+- ✅ **Docker Compose 开发环境**（一键启动、热更新）
+- ✅ **代码质量修复**（5 个潜在 bug 修复）
+- ✅ **文档全面审计**（与代码同步）
 
 ---
 
@@ -151,6 +154,51 @@
 
 - **问题 2**: react-window v2.x 不导出 `FixedSizeList`
 - **解决**: 降级到 react-window@^1.8.10
+
+### Day 3 - 2025-12-05（周五）⭐ Docker 配置 + Bug 修复 + 文档审计
+
+**工作时长**: 半天
+**核心任务**: 开发环境优化 + 代码质量 + 文档同步
+
+**完成工作**：
+
+**阶段 1: Docker Compose 开发环境**
+- ✅ 创建 `docker-compose.yml`（一键启动前后端）
+- ✅ 创建 `apps/web/Dockerfile.dev`（Vite 热更新）
+- ✅ 创建 `apps/server/Dockerfile.dev`（Spring Boot DevTools）
+- ✅ 配置卷挂载实现代码热更新
+- ✅ 修复前端端口 5173 → 3000（端口冲突）
+
+**阶段 2: 网络问题排查与修复**
+- ✅ 修复 API URL 缺少 `/api` 后缀问题
+- ✅ 创建 `apps/web/.env` 配置文件（Vite 环境变量）
+- ✅ 修复 Reader 页面 `canGoPrev` 变量初始化顺序问题
+
+**阶段 3: 代码 Bug 修复（探索发现）**
+- ✅ `Search.jsx`: 修复 useEffect 缺失 handleSearch 依赖
+- ✅ `Reader.jsx`: 为 handleAddBookmark 添加 try-catch
+- ✅ `ProgressService.java`: 添加 bookMap.get() 空指针检查
+- ✅ `BookService.java`: 使用 try-with-resources 确保流关闭
+- ✅ `TxtParser.java`: calculateHash 异常时返回时间戳替代值
+
+**阶段 4: 文档全面审计**
+- ✅ 修正 `CONTEXT.md` 数字错误（控制器 4→3，页面 6→7）
+- ✅ 更新 `OVERVIEW.md` 架构图
+- ✅ 更新 `pages.md` 添加登录注册页面和完整 Stores 列表
+- ✅ 更新 `design.md` 添加 Phase 5 功能设计
+- ✅ 更新 `api.md` 添加 Token 刷新端点文档
+
+**技术亮点**：
+- Docker Compose 一键启动，支持热更新
+- 全面代码探索发现潜在 bug
+- 文档与代码同步审计
+
+**遇到的问题**：
+- **问题 1**: 注册页面显示"网络错误"
+- **解决**: Vite 环境变量需要 `.env` 文件，Docker env 不生效
+
+- **问题 2**: Reader 页面崩溃 "Cannot access 'canGoPrev' before initialization"
+- **解决**: 将 canGoPrev/canGoNext 的 useMemo 移到 handleTouchEnd 之前
 
 ---
 
