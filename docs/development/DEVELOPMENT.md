@@ -2,7 +2,62 @@
 
 > 项目开发规范、代码风格、目录约定
 
-**最后更新**: 2025-12-04
+**最后更新**: 2025-12-05
+
+---
+
+## 快速启动
+
+### 方式一：Docker Compose（推荐）
+
+一键启动前后端，支持热更新：
+
+```bash
+docker compose up -d
+```
+
+| 服务 | 地址 |
+|------|------|
+| 前端 | http://localhost:3000 |
+| 后端 | http://localhost:8080 |
+
+```bash
+# 常用命令
+docker compose up -d      # 启动（后台运行）
+docker compose down       # 停止
+docker compose logs -f    # 查看日志
+docker compose ps         # 查看状态
+```
+
+> 首次启动需要构建镜像（约 6-8 分钟），之后秒级启动
+
+### 方式二：本地开发
+
+需要两个终端窗口：
+
+**终端 1 - 后端**（可选，云端同步需要）：
+```bash
+cd apps/server
+./mvnw spring-boot:run
+```
+
+**终端 2 - 前端**：
+```bash
+pnpm --filter web dev
+```
+
+| 服务 | 地址 |
+|------|------|
+| 前端 | http://localhost:5173 |
+| 后端 | http://localhost:8080 |
+
+### 仅本地阅读（无后端）
+
+只需启动前端，不需要登录/云端同步功能：
+
+```bash
+pnpm --filter web dev
+```
 
 ---
 
