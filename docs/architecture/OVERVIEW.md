@@ -2,7 +2,7 @@
 
 > Novel Reader 系统架构设计
 
-**最后更新**: 2025-12-04
+**最后更新**: 2025-12-05
 
 ---
 
@@ -34,12 +34,13 @@
 │  │                    apps/server (Spring Boot)     │              ││
 │  │  ┌───────────────────────────────────────────────┴────────────┐││
 │  │  │                     REST API Layer                          │││
-│  │  │  AuthController  BookController  ProgressController        │││
+│  │  │  AuthController   BookController   ProgressController      │││
+│  │  │  (含书签API /bookmarks)                                    │││
 │  │  └────────────────────────────────────────────────────────────┘││
 │  │        │                                                       ││
 │  │  ┌─────┴───────────────────────────────────────────────────┐  ││
 │  │  │                    Service Layer                         │  ││
-│  │  │  UserService  BookService  ReadingProgressService       │  ││
+│  │  │  AuthService   BookService   ProgressService            │  ││
 │  │  └──────────────────────────────────────────────────────────┘  ││
 │  │        │                                                       ││
 │  │  ┌─────┴────────────┐    ┌─────────────────────────────────┐  ││

@@ -53,8 +53,11 @@ public class BookService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> BusinessException.notFound("用户不存在"));
 
-        // 解析文件
-        TxtParser.ParseResult result = txtParser.parse(file.getInputStream(), fileName);
+        // 解析文件（使用 try-with-resources 确保流关闭）
+        TxtParser.ParseResult result;
+        try (var inputStream = file.getInputStream()) {
+            result = txtParser.parse(inputStream, fileName);
+        }
         log.info("解析完成: {} - {} 章节", result.getTitle(), result.getChapters().size());
 
         // 创建书籍

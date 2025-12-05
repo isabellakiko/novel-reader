@@ -2,7 +2,7 @@
 
 > Novel Reader 后端 RESTful API 参考
 
-**最后更新**: 2025-12-04
+**最后更新**: 2025-12-05
 **基础路径**: `/api`
 **认证方式**: JWT Bearer Token
 
@@ -138,6 +138,32 @@ Authorization: Bearer <token>
   }
 }
 ```
+
+---
+
+### POST /auth/refresh
+
+刷新 Token（需认证）
+
+**请求头**:
+```
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzM4NCJ9...",
+    "expiresIn": 86400
+  }
+}
+```
+
+**说明**:
+- 前端在 Token 即将过期时（如过期前 5 分钟）调用此接口
+- 返回新 Token，旧 Token 立即失效
 
 ---
 
@@ -510,4 +536,5 @@ Authorization: Bearer <token>
 
 | 日期 | 变更 |
 |------|------|
+| 2025-12-05 | 添加 POST /auth/refresh 端点文档 |
 | 2025-12-04 | 初始化 API 文档 |

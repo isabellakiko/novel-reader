@@ -135,7 +135,7 @@ export default function Search() {
         clearTimeout(debounceRef.current)
       }
     }
-  }, [localQuery, getSuggestions])
+  }, [localQuery, getSuggestions, handleSearch])
 
   // 处理回车
   const handleKeyDown = (e) => {

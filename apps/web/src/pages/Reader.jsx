@@ -160,22 +160,27 @@ export default function Reader() {
   const handleAddBookmark = useCallback(async () => {
     if (!book || !currentChapter) return
 
-    const chapter = book.chapters[currentChapterIndex]
-    const excerpt = currentChapter.lines.slice(0, 2).join(' ').slice(0, 100) + '...'
+    try {
+      const chapter = book.chapters[currentChapterIndex]
+      const excerpt = currentChapter.lines.slice(0, 2).join(' ').slice(0, 100) + '...'
 
-    const result = await addBookmark({
-      bookId: book.id,
-      bookTitle: book.title,
-      chapterIndex: currentChapterIndex,
-      chapterTitle: currentChapter.title,
-      position: chapter.start,
-      excerpt,
-    })
+      const result = await addBookmark({
+        bookId: book.id,
+        bookTitle: book.title,
+        chapterIndex: currentChapterIndex,
+        chapterTitle: currentChapter.title,
+        position: chapter.start,
+        excerpt,
+      })
 
-    if (result.success) {
-      setBookmarkToast({ type: 'success', message: '书签已添加' })
-    } else {
-      setBookmarkToast({ type: 'info', message: result.message })
+      if (result.success) {
+        setBookmarkToast({ type: 'success', message: '书签已添加' })
+      } else {
+        setBookmarkToast({ type: 'info', message: result.message })
+      }
+    } catch (error) {
+      console.error('添加书签失败:', error)
+      setBookmarkToast({ type: 'error', message: '添加书签失败' })
     }
 
     // 3秒后隐藏提示

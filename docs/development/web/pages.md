@@ -2,7 +2,7 @@
 
 > apps/web 页面结构与路由说明
 
-**最后更新**: 2025-12-02
+**最后更新**: 2025-12-05
 
 ---
 
@@ -14,7 +14,9 @@
 | 阅读页 | `/reader/:bookId?` | ✅ 完成 | 阅读器 |
 | 搜索页 | `/search` | ✅ 完成 | 全局搜索 |
 | 书签页 | `/bookmarks` | ✅ 完成 | 书签管理 |
-| 设置页 | `/settings` | ✅ 完成 | 应用设置 |
+| 设置页 | `/settings` | ✅ 完成 | 应用设置、统计 |
+| 登录页 | `/login` | ✅ 完成 | 用户登录 |
+| 注册页 | `/register` | ✅ 完成 | 用户注册 |
 
 ---
 
@@ -34,6 +36,8 @@ const routes = [
       { path: 'search', element: <Search /> },
       { path: 'bookmarks', element: <Bookmarks /> },
       { path: 'settings', element: <Settings /> },
+      { path: 'login', element: <Login /> },
+      { path: 'register', element: <Register /> },
     ],
   },
 ]
@@ -155,13 +159,49 @@ const routes = [
 **路由**: `/settings`
 
 **功能**:
-- 主题设置（白天/夜间/护眼）
+- 主题设置（7 种主题：自动/白天/夜间/暖黄/豆沙绿/薄荷蓝/暗紫）
 - 阅读设置（字体/行高/宽度）
+- 阅读统计（今日/本周/累计）
+- 数据导入导出（完整备份/选择性恢复）
 - 关于信息
 
 **状态**:
 - 主题: `useThemeStore`
 - 阅读设置: `useReaderStore.settings`
+- 统计: `useStatsStore`
+
+---
+
+## 登录页（Login）✅
+
+**位置**: `pages/Login.jsx`
+**路由**: `/login`
+
+**功能**:
+- 用户名/密码登录
+- 记住登录状态
+- 跳转到注册页
+- 登录成功自动跳转
+
+**状态**:
+- 认证: `useAuthStore`
+
+---
+
+## 注册页（Register）✅
+
+**位置**: `pages/Register.jsx`
+**路由**: `/register`
+
+**功能**:
+- 用户名/邮箱/密码注册
+- 密码强度检测
+- 密码确认
+- 跳转到登录页
+- 注册成功自动登录
+
+**状态**:
+- 认证: `useAuthStore`
 
 ---
 
@@ -189,24 +229,33 @@ const routes = [
 
 ## 状态管理
 
-### Stores
+### Stores（完整列表见 [CONTEXT.md](../../ai-context/CONTEXT.md)）
 
 | Store | 文件 | 用途 |
 |-------|------|------|
 | `useLibraryStore` | `stores/library.js` | 书架、导入 |
 | `useReaderStore` | `stores/reader.js` | 阅读器、设置 |
-| `useSearchStore` | `stores/search.js` | 搜索 |
-| `useBookmarkStore` | `stores/bookmark.js` | 书签 |
-| `useThemeStore` | `stores/theme.js` | 主题 |
+| `useSearchStore` | `stores/search.js` | 搜索状态、Worker 通信 |
+| `useBookmarkStore` | `stores/bookmark.js` | 书签 CRUD |
+| `useHighlightStore` | `stores/highlight.js` | 文本高亮、笔记 |
+| `useTagStore` | `stores/tags.js` | 标签分类、收藏 |
+| `useThemeStore` | `stores/theme.js` | 主题切换 |
+| `useAuthStore` | `stores/auth.js` | 用户认证、Token |
+| `useSyncStore` | `stores/sync.js` | 云端同步 |
+| `useStatsStore` | `stores/stats.js` | 阅读统计 |
+| `useToastStore` | `stores/toast.js` | 全局提示 |
+| `useOfflineQueueStore` | `stores/offlineQueue.js` | 离线操作队列 |
+| `db` | `stores/db.js` | IndexedDB Schema |
 
-### 数据库
+### 数据库（IndexedDB）
 
 | 表 | 文件 | 用途 |
 |-----|------|------|
 | `books` | `stores/db.js` | 书籍元数据 |
-| `bookContents` | `stores/db.js` | 书籍内容 |
+| `bookContents` | `stores/db.js` | 书籍内容（大文本分离） |
 | `readingProgress` | `stores/db.js` | 阅读进度 |
 | `bookmarks` | `stores/db.js` | 书签 |
+| `readingStats` | `stores/db.js` | 阅读统计 |
 
 ---
 
@@ -214,6 +263,9 @@ const routes = [
 
 | 日期 | 页面 | 变更 |
 |------|------|------|
+| 2025-12-05 | Login/Register | 新增登录注册页面文档 |
+| 2025-12-05 | Settings | 更新功能描述（统计、导入导出） |
+| 2025-12-05 | Stores | 完善 Stores 列表（13 个） |
 | 2025-12-02 | 全部 | 文档全面更新，反映实际实现 |
 | 2025-12-02 | Library | 添加进度显示 |
 | 2025-12-02 | Search | 4 种搜索模式 |

@@ -56,15 +56,15 @@ novel-reader/
 │   ├── web/                # React 前端应用
 │   │   └── src/
 │   │       ├── components/ # 24+ 组件
-│   │       ├── pages/      # 6 个页面
-│   │       ├── stores/     # 14 个状态存储
+│   │       ├── pages/      # 7 个页面
+│   │       ├── stores/     # 13 个状态存储
 │   │       ├── services/   # API 服务层
 │   │       ├── lib/        # 工具库
 │   │       └── workers/    # Web Worker
 │   └── server/             # Spring Boot 后端
 │       └── src/main/java/com/novelreader/
-│           ├── controller/ # 4 个控制器
-│           ├── service/    # 4 个服务
+│           ├── controller/ # 3 个控制器
+│           ├── service/    # 3 个服务
 │           ├── entity/     # 5 个实体
 │           ├── repository/ # 5 个仓库
 │           ├── security/   # JWT 认证
@@ -114,10 +114,9 @@ novel-reader/
 
 | 控制器 | 路径 | 职责 |
 |--------|------|------|
-| AuthController | /api/auth | 登录、注册、用户信息 |
-| BookController | /api/books | 书籍 CRUD、上传 |
-| ProgressController | /api/progress | 阅读进度同步 |
-| BookmarkController | /api/progress/bookmarks | 书签 CRUD |
+| AuthController | /api/auth | 登录、注册、Token 刷新、用户信息 |
+| BookController | /api/books | 书籍 CRUD、上传、搜索 |
+| ProgressController | /api/progress | 阅读进度、书签（/bookmarks）|
 
 ### 核心包模块（packages/core/src/）
 

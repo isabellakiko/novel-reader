@@ -110,7 +110,8 @@ public class TxtParser {
             }
             return sb.toString();
         } catch (Exception e) {
-            return null;
+            log.warn("计算文件哈希失败，使用时间戳作为替代", e);
+            return "hash-" + System.currentTimeMillis();
         }
     }
 

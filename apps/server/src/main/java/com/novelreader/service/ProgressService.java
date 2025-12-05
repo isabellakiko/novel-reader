@@ -230,6 +230,7 @@ public class ProgressService {
         Map<String, String> chapterTitleMap = batchGetChapterTitlesForBookmarks(bookmarks, bookIds);
 
         List<BookmarkDTO> bookmarkDTOs = bookmarks.stream()
+            .filter(b -> bookMap.containsKey(b.getBook().getId()))
             .map(b -> toBookmarkDTOWithCache(b, bookMap.get(b.getBook().getId()), chapterTitleMap))
             .collect(Collectors.toList());
 
