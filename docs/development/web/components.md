@@ -2,7 +2,7 @@
 
 > apps/web 组件索引与使用说明
 
-**最后更新**: 2025-12-02
+**最后更新**: 2025-12-05
 
 ---
 
@@ -10,18 +10,35 @@
 
 ```
 src/components/
-├── BookCard.jsx           # 3D 书籍卡片
-├── FileUpload.jsx         # 文件上传
-├── ThemeToggle.jsx        # 主题切换
+├── BookCard.jsx              # 3D 书籍卡片（含收藏、标签）
+├── FileUpload.jsx            # 文件上传
+├── ThemeToggle.jsx           # 主题切换
 ├── layout/
-│   ├── Layout.jsx         # 主布局
-│   └── Sidebar.jsx        # 侧边栏导航
+│   ├── Layout.jsx            # 主布局
+│   ├── Sidebar.jsx           # 侧边栏导航
+│   └── MobileNav.jsx         # 移动端导航
 ├── reader/
-│   ├── ChapterList.jsx    # 章节列表
-│   └── ReaderSettings.jsx # 阅读设置
-└── search/
-    ├── HighlightedText.jsx # 高亮文本
-    └── SearchResults.jsx   # 搜索结果
+│   ├── ChapterList.jsx       # 章节列表
+│   ├── ReaderSettings.jsx    # 阅读设置
+│   ├── VirtualizedContent.jsx # 虚拟滚动内容
+│   ├── HighlightedContent.jsx # 高亮内容渲染
+│   ├── HighlightMenu.jsx     # 高亮编辑菜单
+│   ├── NotesPanel.jsx        # 笔记面板
+│   └── ReadingProgress.jsx   # 阅读进度组件
+├── search/
+│   ├── HighlightedText.jsx   # 高亮文本
+│   └── SearchResults.jsx     # 搜索结果
+├── library/
+│   └── TagComponents.jsx     # 标签相关组件
+├── stats/
+│   └── ReadingChart.jsx      # 阅读统计图表
+└── ui/
+    ├── EmptyState.jsx        # 空状态提示
+    ├── ErrorBoundary.jsx     # 错误边界
+    ├── Skeleton.jsx          # 骨架屏
+    ├── NetworkStatus.jsx     # 网络状态
+    ├── SyncConflictDialog.jsx # 同步冲突对话框
+    └── ToastContainer.jsx    # 消息提示容器
 ```
 
 ---
@@ -259,10 +276,123 @@ export default ComponentName
 
 ---
 
+### ReadingProgress ✅ (新增)
+
+**位置**: `components/reader/ReadingProgress.jsx`
+
+**功能**:
+- 底部固定进度条
+- 详细进度面板（剩余时间估算）
+- 迷你进度指示器
+- `useReadingProgress` Hook
+
+**导出**:
+```jsx
+export const BottomProgressBar   // 底部进度条
+export const ProgressPanel       // 详细进度面板
+export const MiniProgress        // 迷你进度
+export function useReadingProgress(book, chapterIndex, scrollProgress)
+```
+
+---
+
+### HighlightedContent ✅ (新增)
+
+**位置**: `components/reader/HighlightedContent.jsx`
+
+**功能**:
+- 渲染带高亮标记的文本
+- 处理文本选择
+- 高亮点击编辑
+
+**Props**:
+```jsx
+{
+  lines: string[],
+  settings: ReaderSettings,
+  bookId: string,
+  chapterIndex: number,
+  onHighlightChange: () => void
+}
+```
+
+---
+
+### HighlightMenu ✅ (新增)
+
+**位置**: `components/reader/HighlightMenu.jsx`
+
+**功能**:
+- 文本选择后的高亮菜单
+- 5 种高亮颜色选择
+- 添加笔记功能
+- 编辑/删除已有高亮
+
+**导出**:
+```jsx
+export function SelectionMenu     // 新增高亮菜单
+export function HighlightEditMenu // 编辑高亮菜单
+```
+
+---
+
+### NotesPanel ✅ (新增)
+
+**位置**: `components/reader/NotesPanel.jsx`
+
+**功能**:
+- 侧边笔记面板
+- 按颜色筛选高亮
+- 只看有笔记的条目
+- 导出为 Markdown
+
+---
+
+### TagComponents ✅ (新增)
+
+**位置**: `components/library/TagComponents.jsx`
+
+**功能**:
+- 标签徽章 (TagBadge)
+- 标签选择器 (TagSelector)
+- 分类选择器 (CategorySelector)
+- 收藏按钮 (FavoriteButton)
+- 筛选栏 (FilterBar)
+
+**导出**:
+```jsx
+export const TagBadge          // 标签徽章
+export const TagSelector       // 标签选择器
+export const CategorySelector  // 分类选择器
+export const FavoriteButton    // 收藏按钮
+export const FilterBar         // 筛选栏
+```
+
+---
+
+### UI 组件 ✅
+
+**位置**: `components/ui/`
+
+| 组件 | 功能 |
+|------|------|
+| EmptyState | 空状态提示，支持自定义图标和操作 |
+| ErrorBoundary | React 错误边界，优雅降级 |
+| Skeleton | 骨架屏加载占位 |
+| NetworkStatus | 网络状态指示器 |
+| SyncConflictDialog | 同步冲突处理对话框 |
+| ToastContainer | 全局消息提示容器 |
+
+---
+
 ## 更新记录
 
 | 日期 | 组件 | 变更 |
 |------|------|------|
+| 2025-12-05 | 全部 | 添加新增组件文档（高亮、标签、进度） |
+| 2025-12-05 | BookCard | 添加收藏按钮、标签显示 |
+| 2025-12-05 | reader/ | 新增 ReadingProgress、HighlightedContent、HighlightMenu、NotesPanel |
+| 2025-12-05 | library/ | 新增 TagComponents |
 | 2025-12-02 | 全部 | 文档全面更新，反映实际实现 |
 | 2025-12-02 | BookCard | 添加进度显示功能 |
 | 2025-12-02 | SearchResults | 4 种搜索模式 |

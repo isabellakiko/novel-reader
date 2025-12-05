@@ -2,7 +2,7 @@
 
 > AI 协作记忆文件 - 快速恢复项目上下文，立即开始工作
 
-**最后更新**: 2025-12-04
+**最后更新**: 2025-12-05
 **项目阶段**: Phase 5 全部完成 ✅
 **当前状态**: 1.0 版本发布
 
@@ -55,9 +55,9 @@ novel-reader/
 ├── apps/
 │   ├── web/                # React 前端应用
 │   │   └── src/
-│   │       ├── components/ # 15+ 组件
-│   │       ├── pages/      # 7 个页面
-│   │       ├── stores/     # 10 个状态存储
+│   │       ├── components/ # 24+ 组件
+│   │       ├── pages/      # 6 个页面
+│   │       ├── stores/     # 14 个状态存储
 │   │       ├── services/   # API 服务层
 │   │       ├── lib/        # 工具库
 │   │       └── workers/    # Web Worker
@@ -87,12 +87,15 @@ novel-reader/
 | library | library.js | 书架管理、导入书籍 |
 | reader | reader.js | 阅读器状态、设置 |
 | bookmark | bookmark.js | 书签 CRUD |
+| highlight | highlight.js | 文本高亮、笔记管理 |
+| tags | tags.js | 标签分类、收藏管理 |
 | search | search.js | 搜索状态、Worker 通信 |
 | theme | theme.js | 主题切换（auto/light/dark） |
 | auth | auth.js | 用户认证、Token 管理 |
 | sync | sync.js | 云端同步 |
 | stats | stats.js | 阅读统计 |
 | toast | toast.js | 全局提示 |
+| offlineQueue | offlineQueue.js | 离线操作队列 |
 | db | db.js | IndexedDB Schema |
 
 ### 前端页面（apps/web/src/pages/）
@@ -157,9 +160,12 @@ novel-reader/
 - 代码分割（4 个 vendor chunks）
 - 路由懒加载（7 个页面）
 - 空闲时预加载
+- **文本高亮和笔记功能**（5 种颜色、Markdown 导出）
+- **书籍标签分类系统**（自定义标签、收藏、筛选）
+- **阅读进度增强**（底部进度条、剩余时间估算）
+- **数据导入导出**（完整备份恢复、选择性导入）
 
 ### 可选扩展（未实现）
-- 导出功能
 - EPUB/PDF 支持
 
 ---
