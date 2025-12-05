@@ -4,23 +4,34 @@ import com.novelreader.config.JwtConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * JwtTokenProvider 单元测试
  */
+@ExtendWith(MockitoExtension.class)
 class JwtTokenProviderTest {
 
     private JwtTokenProvider jwtTokenProvider;
     private JwtConfig jwtConfig;
 
-    // 测试用密钥（至少 256 bits / 32 bytes for HS256）
-    private static final String TEST_SECRET = "test-secret-key-for-jwt-testing-at-least-256-bits-long-for-hs384";
+    @Mock
+    private Environment environment;
+
+    // 测试用密钥（至少 48 bytes for HS384）
+    private static final String TEST_SECRET = "test-secret-key-for-jwt-testing-at-least-48-bytes-long-for-hs384-algorithm";
 
     @BeforeEach
     void setUp() {
-        jwtConfig = new JwtConfig();
+        lenient().when(environment.getActiveProfiles()).thenReturn(new String[]{"test"});
+
+        jwtConfig = new JwtConfig(environment);
         jwtConfig.setSecret(TEST_SECRET);
         jwtConfig.setExpiration(86400000L); // 24小时
 
@@ -131,7 +142,7 @@ class JwtTokenProviderTest {
     @DisplayName("过期 Token 验证失败")
     void validateToken_ExpiredToken_ReturnsFalse() {
         // Given - 创建一个立即过期的 token
-        JwtConfig expiredConfig = new JwtConfig();
+        JwtConfig expiredConfig = new JwtConfig(environment);
         expiredConfig.setSecret(TEST_SECRET);
         expiredConfig.setExpiration(-1000L); // 已过期
 
@@ -149,8 +160,8 @@ class JwtTokenProviderTest {
     @DisplayName("不同密钥签发的 Token 验证失败")
     void validateToken_DifferentSecret_ReturnsFalse() {
         // Given - 使用不同密钥生成 token
-        JwtConfig otherConfig = new JwtConfig();
-        otherConfig.setSecret("different-secret-key-for-jwt-testing-at-least-256-bits-long-for-hs384");
+        JwtConfig otherConfig = new JwtConfig(environment);
+        otherConfig.setSecret("different-secret-key-for-jwt-testing-at-least-48-bytes-long-for-hs384-algo");
         otherConfig.setExpiration(86400000L);
 
         JwtTokenProvider otherProvider = new JwtTokenProvider(otherConfig);

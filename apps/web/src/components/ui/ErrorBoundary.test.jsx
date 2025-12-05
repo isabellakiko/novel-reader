@@ -47,21 +47,34 @@ describe('ErrorBoundary', () => {
   })
 
   it('点击重试按钮重置错误状态', () => {
+    // 使用一个可控的组件状态来模拟修复错误后的重试
+    let shouldThrow = true
+
+    function ControlledThrow() {
+      if (shouldThrow) {
+        throw new Error('Test error')
+      }
+      return <div>正常内容</div>
+    }
+
     const { rerender } = render(
       <ErrorBoundary>
-        <ThrowError shouldThrow={true} />
+        <ControlledThrow />
       </ErrorBoundary>
     )
 
     expect(screen.getByText('页面出现了问题')).toBeInTheDocument()
 
+    // 模拟错误已修复
+    shouldThrow = false
+
     // 点击重试
     fireEvent.click(screen.getByText('重试'))
 
-    // 重新渲染不抛出错误的组件
+    // 重新渲染以触发更新
     rerender(
       <ErrorBoundary>
-        <ThrowError shouldThrow={false} />
+        <ControlledThrow />
       </ErrorBoundary>
     )
 

@@ -1,6 +1,7 @@
 package com.novelreader.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.novelreader.config.RateLimitConfig;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletResponse;
@@ -40,6 +41,7 @@ class RateLimitFilterTest {
         rateLimitConfig.setUploadRequestsPerMinute(10);
 
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule()); // 支持 Java 8 日期类型
         rateLimitFilter = new RateLimitFilter(rateLimitConfig, objectMapper);
     }
 

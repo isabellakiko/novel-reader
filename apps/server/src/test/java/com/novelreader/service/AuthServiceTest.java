@@ -50,7 +50,6 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         testUser = User.builder()
-            .id(1L)
             .username("testuser")
             .email("test@example.com")
             .passwordHash("hashedPassword")
@@ -58,6 +57,7 @@ class AuthServiceTest {
             .role("USER")
             .enabled(true)
             .build();
+        testUser.setId(1L); // id 在 BaseEntity 中，需要单独设置
     }
 
     @Nested
