@@ -1,0 +1,28 @@
+# 前端开发环境 Dockerfile
+FROM node:20-alpine
+
+# 安装 pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# 复制依赖文件
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/core/package.json ./packages/core/
+COPY packages/shared/package.json ./packages/shared/
+
+# 安装依赖
+RUN pnpm install --frozen-lockfile
+
+# 复制源码
+COPY apps/web ./apps/web
+COPY packages ./packages
+
+WORKDIR /app/apps/web
+
+# Vite 开发服务器端口
+EXPOSE 5173
+
+# 启动开发服务器（--host 允许外部访问）
+CMD ["pnpm", "dev", "--host", "0.0.0.0"]

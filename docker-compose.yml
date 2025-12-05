@@ -1,0 +1,41 @@
+services:
+  # 前端开发服务
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      # 挂载源码实现热更新
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
+      - ./apps/web/index.html:/app/apps/web/index.html
+      - ./packages:/app/packages
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
+      - server
+    networks:
+      - novel-network
+
+  # 后端开发服务
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      # 挂载源码实现热更新（Spring Boot DevTools）
+      - ./apps/server/src:/app/src
+      - ./data:/app/data
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - JWT_SECRET=docker-dev-secret-key-for-jwt-testing-at-least-48-bytes-long
+    networks:
+      - novel-network
+
+networks:
+  novel-network:
+    driver: bridge

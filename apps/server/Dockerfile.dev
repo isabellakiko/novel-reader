@@ -1,0 +1,22 @@
+# 后端开发环境 Dockerfile
+FROM eclipse-temurin:21-jdk-alpine
+
+# 安装必要工具
+RUN apk add --no-cache bash dos2unix curl
+
+WORKDIR /app
+
+# 复制整个 server 目录
+COPY apps/server/ ./
+
+# 修复行尾符并确保有执行权限
+RUN dos2unix mvnw && chmod +x mvnw
+
+# 下载依赖（利用 Docker 缓存）
+RUN ./mvnw dependency:go-offline -B
+
+# Spring Boot 端口
+EXPOSE 8080
+
+# 使用 spring-boot-devtools 实现热更新
+CMD ["./mvnw", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-Dspring.devtools.restart.enabled=true"]
