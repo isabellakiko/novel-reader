@@ -13,7 +13,7 @@ services:
       - ./apps/web/index.html:/app/apps/web/index.html
       - ./packages:/app/packages
     environment:
-      - VITE_API_URL=http://localhost:8080
+      - VITE_API_URL=http://localhost:8080/api
     depends_on:
       - server
     networks:
