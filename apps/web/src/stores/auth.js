@@ -30,6 +30,10 @@ function getTokenExpiration(token) {
 // 刷新 Token 的定时器
 let refreshTimer = null
 
+// 刷新锁，防止并发刷新
+let isRefreshing = false
+let refreshPromise = null
+
 /**
  * 设置 Token 自动刷新定时器
  * 在过期前 5 分钟刷新
@@ -167,31 +171,44 @@ const useAuthStore = create(
         localStorage.removeItem('auth-token')
       },
 
-      // 刷新 Token
+      // 刷新 Token（带并发保护）
       refreshToken: async () => {
         const { token, isAuthenticated } = get()
         if (!token || !isAuthenticated) return false
 
-        try {
-          const data = await authApi.refresh()
-          const { token: newToken, user } = data.data
-
-          set({
-            user,
-            token: newToken,
-            isAuthenticated: true,
-          })
-
-          // 设置下一次刷新
-          setupRefreshTimer(newToken, () => get().refreshToken())
-
-          return true
-        } catch (err) {
-          // 刷新失败，可能是 token 已过期，清理状态
-          console.error('Token refresh failed:', err)
-          // 不自动登出，让 401 拦截器处理
-          return false
+        // 如果已经在刷新中，返回当前的 Promise
+        if (isRefreshing && refreshPromise) {
+          return refreshPromise
         }
+
+        isRefreshing = true
+        refreshPromise = (async () => {
+          try {
+            const data = await authApi.refresh()
+            const { token: newToken, user } = data.data
+
+            set({
+              user,
+              token: newToken,
+              isAuthenticated: true,
+            })
+
+            // 设置下一次刷新
+            setupRefreshTimer(newToken, () => get().refreshToken())
+
+            return true
+          } catch (err) {
+            // 刷新失败，可能是 token 已过期，清理状态
+            console.error('Token refresh failed:', err)
+            // 不自动登出，让 401 拦截器处理
+            return false
+          } finally {
+            isRefreshing = false
+            refreshPromise = null
+          }
+        })()
+
+        return refreshPromise
       },
 
       // 获取当前 token（供其他模块使用）

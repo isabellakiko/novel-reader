@@ -13,6 +13,7 @@ import { progressStore } from '../stores/db'
 import useAuthStore from '../stores/auth'
 import useSyncStore from '../stores/sync'
 import { useTagStore } from '../stores/tags'
+import useToastStore from '../stores/toast'
 import FileUpload from '../components/FileUpload'
 import BookCard from '../components/BookCard'
 import { FilterBar } from '../components/library/TagComponents'
@@ -47,6 +48,7 @@ export default function Library() {
   })
 
   const { filterBooks: applyTagFilters, cleanupOrphanedData } = useTagStore()
+  const toast = useToastStore()
 
   // 加载书籍列表和阅读进度
   useEffect(() => {
@@ -106,7 +108,7 @@ export default function Library() {
         } catch (error) {
           console.error('[Library] 上传失败:', error)
           setImportProgress(null)
-          alert('上传失败: ' + error.message)
+          toast.error('上传失败: ' + (error?.message || '请检查网络连接'))
         }
         return
       }
@@ -143,7 +145,7 @@ export default function Library() {
       } catch (error) {
         console.error('[Library] 处理失败:', error)
         setImportProgress(null)
-        alert('文件解析失败: ' + error.message)
+        toast.error('文件解析失败: ' + (error?.message || '未知错误'))
       }
     },
     [addBook, setImportProgress, uploadMode, isAuthenticated, uploadBook]

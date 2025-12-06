@@ -48,6 +48,18 @@ public class BookController {
         return ResponseEntity.ok(ApiResponse.success(books));
     }
 
+    // 注意：/search 必须在 /{bookId} 之前，否则 "search" 会被当作 bookId 解析
+    @GetMapping("/search")
+    @Operation(summary = "搜索书籍")
+    public ResponseEntity<ApiResponse<PageResponse<BookDTO>>> searchBooks(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        PageResponse<BookDTO> books = bookService.searchBooks(userDetails.getId(), keyword, page, size);
+        return ResponseEntity.ok(ApiResponse.success(books));
+    }
+
     @GetMapping("/{bookId}")
     @Operation(summary = "获取书籍详情", description = "包含章节列表")
     public ResponseEntity<ApiResponse<BookDetailDTO>> getBookDetail(
@@ -74,16 +86,5 @@ public class BookController {
             @PathVariable Long bookId) {
         bookService.deleteBook(userDetails.getId(), bookId);
         return ResponseEntity.ok(ApiResponse.success("删除成功", null));
-    }
-
-    @GetMapping("/search")
-    @Operation(summary = "搜索书籍")
-    public ResponseEntity<ApiResponse<PageResponse<BookDTO>>> searchBooks(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        PageResponse<BookDTO> books = bookService.searchBooks(userDetails.getId(), keyword, page, size);
-        return ResponseEntity.ok(ApiResponse.success(books));
     }
 }

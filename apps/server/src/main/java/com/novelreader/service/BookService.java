@@ -36,6 +36,10 @@ public class BookService {
     private final UserRepository userRepository;
     private final TxtParser txtParser;
 
+    private static final long MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final int MAX_KEYWORD_LENGTH = 100;
+
     /**
      * 上传并解析书籍
      */
@@ -45,9 +49,26 @@ public class BookService {
             throw BusinessException.badRequest("文件不能为空");
         }
 
+        // 验证文件大小
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw BusinessException.badRequest("文件过大，最大支持 100MB");
+        }
+
         String fileName = file.getOriginalFilename();
         if (fileName == null || !fileName.toLowerCase().endsWith(".txt")) {
             throw BusinessException.badRequest("只支持 TXT 格式文件");
+        }
+
+        // 验证文件名长度，防止路径遍历攻击
+        if (fileName.length() > 255) {
+            throw BusinessException.badRequest("文件名过长");
+        }
+
+        // 验证 MIME 类型（可选，TXT 文件的 MIME 类型可能不一致）
+        String contentType = file.getContentType();
+        if (contentType != null && !contentType.startsWith("text/") &&
+            !contentType.equals("application/octet-stream")) {
+            log.warn("文件 MIME 类型可能不正确: {}", contentType);
         }
 
         User user = userRepository.findById(userId)
@@ -95,6 +116,10 @@ public class BookService {
      * 获取用户书籍列表
      */
     public PageResponse<BookDTO> getBooks(Long userId, int page, int size) {
+        // 参数验证和限制
+        page = Math.max(0, page);
+        size = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
+
         Pageable pageable = PageRequest.of(page, size);
         Page<Book> bookPage = bookRepository.findByUserIdOrderByUpdatedAtDesc(userId, pageable);
 
@@ -181,6 +206,19 @@ public class BookService {
      * 搜索书籍
      */
     public PageResponse<BookDTO> searchBooks(Long userId, String keyword, int page, int size) {
+        // 关键字验证
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw BusinessException.badRequest("搜索关键字不能为空");
+        }
+        keyword = keyword.trim();
+        if (keyword.length() > MAX_KEYWORD_LENGTH) {
+            throw BusinessException.badRequest("搜索关键字不能超过 " + MAX_KEYWORD_LENGTH + " 个字符");
+        }
+
+        // 参数验证和限制
+        page = Math.max(0, page);
+        size = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
+
         Pageable pageable = PageRequest.of(page, size);
         Page<Book> bookPage = bookRepository.searchByKeyword(userId, keyword, pageable);
 

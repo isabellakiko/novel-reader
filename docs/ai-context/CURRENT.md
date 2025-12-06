@@ -3,7 +3,7 @@
 > 本周/本月开发进度记录 - AI 了解最近完成了什么
 
 **本周时间**: 2025-12-02 - 2025-12-08（第 49 周）
-**最后更新**: 2025-12-05
+**最后更新**: 2025-12-06
 **当前阶段**: Phase 5 完成 - 1.0 版本发布
 
 ---
@@ -44,6 +44,7 @@
 - ✅ **Docker Compose 开发环境**（一键启动、热更新）
 - ✅ **代码质量修复**（5 个潜在 bug 修复）
 - ✅ **文档全面审计**（与代码同步）
+- ✅ **全栈代码审计与修复**（8 项优化）
 
 ---
 
@@ -199,6 +200,36 @@
 
 - **问题 2**: Reader 页面崩溃 "Cannot access 'canGoPrev' before initialization"
 - **解决**: 将 canGoPrev/canGoNext 的 useMemo 移到 handleTouchEnd 之前
+
+### Day 4 - 2025-12-06（周六）⭐ 全栈代码审计与修复
+
+**工作时长**: 2h
+**核心任务**: 全面探索代码质量，修复潜在问题
+
+**完成工作**：
+
+**阶段 1: 后端修复**
+- ✅ `BookController.java`: 修复路由顺序（/search 在 /{bookId} 之前）
+- ✅ `BookService.java`: 添加文件大小验证（100MB 限制）
+- ✅ `BookService.java`: 添加分页大小限制（最大100条）
+- ✅ `BookService.java`: 添加搜索关键字验证（非空、最大100字符）
+
+**阶段 2: 前端修复**
+- ✅ `Library.jsx`: 用 toast.error() 替换 alert()
+- ✅ `FileUpload.jsx`: 添加前端文件大小验证（100MB）
+- ✅ `offlineQueue.js`: 防止热重载时重复注册事件监听器
+- ✅ `auth.js`: 修复 Token 刷新竞态条件（添加刷新锁）
+
+**阶段 3: 核心包修复**
+- ✅ `txt-parser.js`: 添加空文件检测
+- ✅ `txt-parser.js`: 详细的文件读取错误信息
+- ✅ `encoding.js`: 移除错误的 iso-8859-1/windows-1252 → gbk 映射
+
+**技术亮点**：
+- 全面探索发现 8 个潜在问题
+- 前后端参数验证一致性
+- Token 刷新并发保护（Promise 复用）
+- 事件监听器防重复注册
 
 ---
 

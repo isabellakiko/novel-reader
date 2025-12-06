@@ -216,12 +216,19 @@ const useOfflineQueueStore = create(
   )
 )
 
-// 监听在线状态变化
-if (typeof window !== 'undefined') {
-  window.addEventListener('online', () => {
-    console.log('[OfflineQueue] Online detected, processing queue...')
-    useOfflineQueueStore.getState().processQueue()
-  })
+// 全局标记，防止热重载时重复注册监听器
+let onlineListenerRegistered = false
+
+// 在线状态变化处理函数
+function handleOnline() {
+  console.log('[OfflineQueue] Online detected, processing queue...')
+  useOfflineQueueStore.getState().processQueue()
+}
+
+// 监听在线状态变化（确保只注册一次）
+if (typeof window !== 'undefined' && !onlineListenerRegistered) {
+  window.addEventListener('online', handleOnline)
+  onlineListenerRegistered = true
 }
 
 export default useOfflineQueueStore

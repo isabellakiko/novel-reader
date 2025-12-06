@@ -28,6 +28,12 @@ export async function parseTxtFile(file, options = {}) {
   // 阶段 1: 读取文件
   onProgress?.('reading', 0)
   const buffer = await readFileAsArrayBuffer(file)
+
+  // 检查空文件
+  if (buffer.byteLength === 0) {
+    throw new Error('文件为空，无法解析')
+  }
+
   onProgress?.('reading', 100)
 
   // 阶段 2: 检测编码
@@ -160,7 +166,19 @@ function readFileAsArrayBuffer(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result)
-    reader.onerror = () => reject(new Error('文件读取失败'))
+    reader.onerror = () => {
+      // 提供更详细的错误信息
+      const errorMap = {
+        1: '操作被中止',
+        2: '文件不可读（权限问题）',
+        3: '读取过程中出错',
+        4: '文件选择被取消',
+      }
+      const errorCode = reader.error?.code
+      const errorMsg = errorMap[errorCode] || '未知错误'
+      reject(new Error(`文件读取失败: ${errorMsg}`))
+    }
+    reader.onabort = () => reject(new Error('文件读取被中止'))
     reader.readAsArrayBuffer(blob)
   })
 }

@@ -32,8 +32,8 @@ const ENCODING_ALIASES = {
   'gb18030': 'gb18030',
   'big5': 'big5',
   'ascii': 'utf-8', // ASCII 是 UTF-8 的子集
-  'iso-8859-1': 'gbk', // 常被误识别
-  'windows-1252': 'gbk',
+  // 注意：iso-8859-1 和 windows-1252 是西欧编码，不应映射到 GBK
+  // 如果需要支持，应使用自动检测而非强制映射
 }
 
 /**

@@ -19,18 +19,30 @@ const ACCEPTED_TYPES = {
 
 const ACCEPTED_EXTENSIONS = Object.values(ACCEPTED_TYPES).flat()
 
+// 文件大小限制
+const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+const MAX_FILE_SIZE_MB = MAX_FILE_SIZE / (1024 * 1024)
+
 export default function FileUpload({ onFileSelect, isLoading, className }) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [dragError, setDragError] = useState(null)
 
   /**
-   * 验证文件类型
+   * 验证文件类型和大小
    */
   const validateFile = useCallback((file) => {
+    // 验证文件大小
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1)
+      return `文件过大（${fileSizeMB}MB），最大支持 ${MAX_FILE_SIZE_MB}MB`
+    }
+
+    // 验证文件类型
     const ext = '.' + file.name.split('.').pop().toLowerCase()
     if (!ACCEPTED_EXTENSIONS.includes(ext)) {
       return `不支持的文件类型: ${ext}`
     }
+
     return null
   }, [])
 
@@ -166,7 +178,7 @@ export default function FileUpload({ onFileSelect, isLoading, className }) {
           {isLoading ? '正在解析...' : '拖拽文件到这里，或点击选择'}
         </p>
         <p className="text-sm text-muted-foreground mt-1">
-          支持 TXT 格式，自动识别编码
+          支持 TXT 格式（最大 {MAX_FILE_SIZE_MB}MB），自动识别编码
         </p>
       </div>
 
