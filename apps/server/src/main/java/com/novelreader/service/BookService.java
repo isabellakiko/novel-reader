@@ -64,6 +64,12 @@ public class BookService {
             throw BusinessException.badRequest("文件名过长");
         }
 
+        // FIXED: 路径遍历防护 - 检查危险字符
+        if (fileName.contains("..") || fileName.contains("/") || fileName.contains("\\") || fileName.contains("\0")) {
+            log.warn("检测到潜在路径遍历攻击: {}", fileName.replaceAll("[^\\w.-]", "_"));
+            throw BusinessException.badRequest("文件名包含非法字符");
+        }
+
         // FIXED: 增强 MIME 类型验证
         String contentType = file.getContentType();
         if (contentType != null) {

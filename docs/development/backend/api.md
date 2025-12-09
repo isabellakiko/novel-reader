@@ -2,7 +2,7 @@
 
 > Novel Reader 后端 RESTful API 参考
 
-**最后更新**: 2025-12-05
+**最后更新**: 2025-12-09
 **基础路径**: `/api`
 **认证方式**: JWT Bearer Token
 
@@ -71,7 +71,7 @@
 {
   "username": "string (3-20字符)",
   "email": "string (邮箱格式)",
-  "password": "string (6+字符)"
+  "password": "string (8-100字符，必须包含大写字母、小写字母和数字)"
 }
 ```
 
@@ -536,5 +536,6 @@ Authorization: Bearer <token>
 
 | 日期 | 变更 |
 |------|------|
+| 2025-12-09 | 更新密码要求说明（6+ → 8-100字符，必须包含大小写字母和数字） |
 | 2025-12-05 | 添加 POST /auth/refresh 端点文档 |
 | 2025-12-04 | 初始化 API 文档 |

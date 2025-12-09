@@ -20,10 +20,11 @@ export default function Register() {
   })
   const [showPassword, setShowPassword] = useState(false)
 
-  // 密码强度检查
+  // 密码强度检查 - 与后端验证规则同步 (8+ 字符，大小写字母 + 数字)
   const passwordChecks = {
-    length: formData.password.length >= 6,
-    hasLetter: /[a-zA-Z]/.test(formData.password),
+    length: formData.password.length >= 8,
+    hasLowercase: /[a-z]/.test(formData.password),
+    hasUppercase: /[A-Z]/.test(formData.password),
     hasNumber: /\d/.test(formData.password),
   }
   const isPasswordValid = Object.values(passwordChecks).every(Boolean)
@@ -153,8 +154,9 @@ export default function Register() {
               {/* 密码强度提示 */}
               {formData.password && (
                 <div className="mt-2 space-y-1">
-                  <PasswordCheck checked={passwordChecks.length} text="至少 6 个字符" />
-                  <PasswordCheck checked={passwordChecks.hasLetter} text="包含字母" />
+                  <PasswordCheck checked={passwordChecks.length} text="至少 8 个字符" />
+                  <PasswordCheck checked={passwordChecks.hasLowercase} text="包含小写字母" />
+                  <PasswordCheck checked={passwordChecks.hasUppercase} text="包含大写字母" />
                   <PasswordCheck checked={passwordChecks.hasNumber} text="包含数字" />
                 </div>
               )}
