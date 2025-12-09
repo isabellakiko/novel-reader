@@ -59,7 +59,29 @@ cd apps/server
 
 ## 启动服务
 
-### 方式一：仅前端（离线模式）
+### 方式一：Docker Compose（推荐）
+
+一键启动前后端，支持热更新：
+
+```bash
+docker compose up -d
+```
+
+访问：
+- 前端：**http://localhost:3000**
+- 后端 API：http://localhost:8080/api
+
+> ⚠️ Docker 模式前端端口是 **3000**，不是 5173
+
+常用命令：
+```bash
+docker compose up -d      # 启动（后台）
+docker compose down       # 停止
+docker compose logs -f    # 查看日志
+docker compose ps         # 查看状态
+```
+
+### 方式二：仅前端（离线模式）
 
 前端可以独立运行，使用本地 IndexedDB 存储数据。
 
@@ -68,9 +90,9 @@ cd apps/server
 pnpm --filter web dev
 ```
 
-访问：http://localhost:5173
+访问：http://localhost:5173（本地开发端口）
 
-### 方式二：前端 + 后端（完整模式）
+### 方式三：前端 + 后端（本地完整模式）
 
 需要同时启动前端和后端，支持云端同步功能。
 
@@ -91,10 +113,17 @@ pnpm --filter web dev
 ```
 
 访问：
-- 前端：http://localhost:5173
+- 前端：http://localhost:5173（本地开发端口）
 - 后端 API：http://localhost:8080/api
 - H2 控制台：http://localhost:8080/api/h2-console
 - API 文档：http://localhost:8080/api/swagger-ui.html
+
+### 端口速查
+
+| 启动方式 | 前端端口 | 后端端口 |
+|----------|----------|----------|
+| Docker Compose | **3000** | 8080 |
+| 本地开发 (pnpm dev) | 5173 | 8080 |
 
 ---
 
@@ -157,7 +186,10 @@ pkill -f "novel-reader-server"
 
 ### 前端
 
-打开 http://localhost:5173，看到书架页面即成功。
+- Docker 模式：打开 http://localhost:3000
+- 本地开发：打开 http://localhost:5173
+
+看到书架页面即成功。
 
 ### 后端
 
@@ -184,7 +216,8 @@ curl http://localhost:8080/api/actuator/health
 
 ```bash
 # 查看端口占用
-lsof -i :5173  # 前端
+lsof -i :3000  # 前端（Docker）
+lsof -i :5173  # 前端（本地开发）
 lsof -i :8080  # 后端
 
 # 杀死占用进程

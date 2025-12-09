@@ -128,9 +128,10 @@ const encoding = detectEncoding(buffer)
 const text = decodeToUTF8(buffer, encoding)
 ```
 
-**性能指标**:
-- 32MB GBK 文件检测: <10ms
-- 32MB 文件解码: <50ms
+**性能指标**（32MB 文件）:
+- 编码检测: <10ms
+- 解码转换: <50ms
+- 完整流程: <60ms（检测 + 解码）
 
 ---
 
@@ -170,8 +171,8 @@ const preview = await previewTxtFile(file)
 // => { title, author, encoding, sampleChapters: [...] }
 ```
 
-**性能指标**:
-- 32MB 文件完整解析: <100ms
+**性能指标**（32MB 文件）:
+- 完整解析: <100ms（检测 <10ms + 解码 <50ms + 章节识别 <40ms）
 - 100KB 预览: <10ms
 
 ---

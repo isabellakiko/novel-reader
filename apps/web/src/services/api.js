@@ -19,11 +19,24 @@ const api = axios.create({
   },
 })
 
+// FIXED: 统一从 auth-storage 读取 token，避免双重存储问题
+function getAuthToken() {
+  try {
+    const authData = localStorage.getItem('auth-storage')
+    if (authData) {
+      const parsed = JSON.parse(authData)
+      return parsed?.state?.token || null
+    }
+  } catch {
+    // 解析失败，忽略
+  }
+  return null
+}
+
 // 请求拦截器：添加 Token
 api.interceptors.request.use(
   (config) => {
-    // 从 auth store 同步的独立 key 读取 token
-    const token = localStorage.getItem('auth-token')
+    const token = getAuthToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -32,9 +45,26 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+// FIXED: 添加基本响应验证
+function validateResponse(data) {
+  // 确保响应是对象类型
+  if (data === null || data === undefined) {
+    return data
+  }
+  // 如果是数组，直接返回
+  if (Array.isArray(data)) {
+    return data
+  }
+  // 如果不是对象，包装为对象
+  if (typeof data !== 'object') {
+    return { data }
+  }
+  return data
+}
+
 // 响应拦截器：处理错误
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => validateResponse(response.data),
   (error) => {
     const toast = useToastStore.getState()
 
@@ -43,9 +73,8 @@ api.interceptors.response.use(
 
       // Token 过期或无效
       if (status === 401) {
-        // 清理 auth store 的持久化数据
+        // FIXED: 只清理 auth-storage
         localStorage.removeItem('auth-storage')
-        localStorage.removeItem('auth-token')
         toast.warning('登录已过期，请重新登录')
         // 延迟跳转，让用户看到提示
         setTimeout(() => {

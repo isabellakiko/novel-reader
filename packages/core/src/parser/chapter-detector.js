@@ -81,18 +81,34 @@ function getMinChapterDistance(title) {
  */
 
 /**
+ * 大文件阈值（5MB）- 超过此大小使用采样检测
+ */
+const LARGE_FILE_THRESHOLD = 5 * 1024 * 1024
+
+/**
+ * 采样检测的每段大小（500KB）
+ */
+const SAMPLE_SIZE = 500 * 1024
+
+/**
  * 检测章节（主入口）
  *
  * 自动选择最佳检测策略：
  * 1. 先尝试行首检测（传统格式，更精确）
  * 2. 如果结果太少，尝试全文搜索（嵌入式章节）
  * 3. 基于质量而非数量选择最佳结果
+ * 4. 对于大文件（>5MB），使用采样检测提升性能
  *
  * @param {string} content - 全文内容
  * @param {RegExp[]} [customPatterns] - 自定义正则模式（可选）
  * @returns {Chapter[]} 章节列表
  */
 export function detectChapters(content, customPatterns) {
+  // 对于大文件，使用优化的采样检测
+  if (content.length > LARGE_FILE_THRESHOLD) {
+    return detectChaptersLargeFile(content, customPatterns)
+  }
+
   // 先尝试行首检测（更精确，传统格式）
   const lineBasedChapters = detectChaptersLineStart(content, customPatterns)
 
@@ -121,6 +137,176 @@ export function detectChapters(content, customPatterns) {
 }
 
 /**
+ * 大文件章节检测（采样策略）
+ *
+ * 对于大文件，采用以下策略：
+ * 1. 采样检测：取开头、中间、结尾各 500KB 来确定章节模式
+ * 2. 确定最佳模式后，用该模式全文扫描
+ * 3. 优化：行首检测使用正则 matchAll 而非逐行遍历
+ *
+ * @param {string} content - 全文内容
+ * @param {RegExp[]} [customPatterns] - 自定义正则模式
+ * @returns {Chapter[]} 章节列表
+ */
+function detectChaptersLargeFile(content, customPatterns) {
+  const patterns = customPatterns || CHAPTER_PATTERNS
+
+  // 步骤 1: 采样检测最佳模式
+  const bestPattern = detectBestPatternFromSamples(content, patterns)
+
+  if (!bestPattern) {
+    // 如果采样没找到模式，回退到全文检测（但限制处理量）
+    return detectChaptersLineStartOptimized(content, patterns)
+  }
+
+  // 步骤 2: 使用最佳模式进行全文检测（优化版）
+  return detectChaptersWithPattern(content, bestPattern)
+}
+
+/**
+ * 从采样中检测最佳章节模式
+ * @param {string} content - 全文内容
+ * @param {RegExp[]} patterns - 章节模式列表
+ * @returns {RegExp|null} 最佳匹配模式
+ */
+function detectBestPatternFromSamples(content, patterns) {
+  // 取三段采样：开头、中间、结尾
+  const samples = []
+
+  // 开头 500KB
+  samples.push(content.slice(0, SAMPLE_SIZE))
+
+  // 中间 500KB
+  const midStart = Math.floor(content.length / 2) - SAMPLE_SIZE / 2
+  if (midStart > SAMPLE_SIZE) {
+    samples.push(content.slice(midStart, midStart + SAMPLE_SIZE))
+  }
+
+  // 结尾 500KB
+  const endStart = content.length - SAMPLE_SIZE
+  if (endStart > SAMPLE_SIZE) {
+    samples.push(content.slice(endStart))
+  }
+
+  // 统计每个模式在采样中的匹配次数
+  const patternScores = new Map()
+
+  for (const pattern of patterns) {
+    let totalMatches = 0
+
+    for (const sample of samples) {
+      const lines = sample.split(/\r?\n/)
+      for (const line of lines) {
+        if (pattern.test(line.trim())) {
+          totalMatches++
+        }
+      }
+    }
+
+    if (totalMatches > 0) {
+      patternScores.set(pattern, totalMatches)
+    }
+  }
+
+  // 返回匹配最多的模式
+  let bestPattern = null
+  let maxScore = 0
+
+  for (const [pattern, score] of patternScores) {
+    if (score > maxScore) {
+      maxScore = score
+      bestPattern = pattern
+    }
+  }
+
+  // 至少需要在采样中找到 5 个匹配才认为是有效模式
+  return maxScore >= 5 ? bestPattern : null
+}
+
+/**
+ * 使用指定模式进行全文章节检测（优化版）
+ * @param {string} content - 全文内容
+ * @param {RegExp} pattern - 章节模式
+ * @returns {Chapter[]} 章节列表
+ */
+function detectChaptersWithPattern(content, pattern) {
+  const chapters = []
+
+  // 创建带 g 和 m 标志的模式，用于多行匹配
+  const globalPattern = new RegExp('^' + pattern.source, 'gm' + (pattern.flags.includes('i') ? 'i' : ''))
+
+  let match
+  let lastIndex = 0
+
+  while ((match = globalPattern.exec(content)) !== null) {
+    const title = match[0].trim()
+
+    if (title.length > 0) {
+      // 结束上一章
+      if (chapters.length > 0) {
+        chapters[chapters.length - 1].end = match.index - 1
+      }
+
+      chapters.push({
+        index: chapters.length,
+        title: title,
+        start: match.index,
+        end: -1,
+      })
+    }
+
+    lastIndex = globalPattern.lastIndex
+  }
+
+  // 设置最后一章的结束位置
+  if (chapters.length > 0) {
+    chapters[chapters.length - 1].end = content.length - 1
+  }
+
+  return chapters
+}
+
+/**
+ * 优化的行首章节检测（用于大文件回退）
+ * 限制处理量，避免过长的处理时间
+ * @param {string} content - 全文内容
+ * @param {RegExp[]} patterns - 章节模式列表
+ * @returns {Chapter[]} 章节列表
+ */
+function detectChaptersLineStartOptimized(content, patterns) {
+  const chapters = []
+
+  // 对于大文件，使用正则的多行模式而非逐行遍历
+  // 创建组合正则
+  const combinedSource = patterns.map((p) => '(?:' + p.source + ')').join('|')
+  const combinedPattern = new RegExp('^(?:' + combinedSource + ')', 'gm')
+
+  let match
+  while ((match = combinedPattern.exec(content)) !== null) {
+    const title = match[0].trim()
+
+    if (title.length > 0) {
+      if (chapters.length > 0) {
+        chapters[chapters.length - 1].end = match.index - 1
+      }
+
+      chapters.push({
+        index: chapters.length,
+        title: title,
+        start: match.index,
+        end: -1,
+      })
+    }
+  }
+
+  if (chapters.length > 0) {
+    chapters[chapters.length - 1].end = content.length - 1
+  }
+
+  return chapters
+}
+
+/**
  * 评估章节检测质量
  * @param {Chapter[]} chapters - 章节列表
  * @param {number} contentLength - 全文长度
@@ -135,13 +321,22 @@ function scoreChapterDetection(chapters, contentLength) {
   // 3. 覆盖率（章节总长度 / 全文长度）
 
   const avgLength = contentLength / chapters.length
-  const idealAvgLength = 5000 // 理想平均章节长度
 
-  // 数量分数：章节数在合理范围内得分高
+  // OPTIMIZED: 使用更宽容的范围 (2000-10000 字都可接受)
+  // 适应不同类型小说：网文(3000-4000)、武侠(8000-10000)、短篇(1000-2000)
+  const preferredMin = 2000
+  const preferredMax = 10000
+
+  // 数量分数：章节数在合理范围内得分高（支持超长小说 8000+ 章）
   const countScore = Math.min(chapters.length / 10, 10)
 
-  // 长度分数：平均长度接近理想值得分高
-  const lengthScore = 10 - Math.min(10, Math.abs(avgLength - idealAvgLength) / 1000)
+  // 长度分数：在可接受范围内满分，超出范围逐渐扣分
+  let lengthScore = 10
+  if (avgLength < preferredMin) {
+    lengthScore -= Math.min(10, (preferredMin - avgLength) / 500)
+  } else if (avgLength > preferredMax) {
+    lengthScore -= Math.min(10, (avgLength - preferredMax) / 2000)
+  }
 
   // 覆盖率分数
   const totalCovered = chapters.reduce((sum, ch) => sum + (ch.end - ch.start), 0)
@@ -267,7 +462,8 @@ export function extractBookInfo(content) {
   let title = ''
   let author = ''
 
-  const header = content.slice(0, 2000)
+  // OPTIMIZED: 增大检查范围，适应有长序言的书籍
+  const header = content.slice(0, 5000)
 
   // 『书名/作者:xxx』格式
   const pattern1 = /『([^/]+)\/作者[:：]([^』]+)』/

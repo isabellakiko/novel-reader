@@ -41,6 +41,8 @@ export const SEARCH_MODES = {
 
 // 创建 Worker 实例
 let searchWorker = null
+// FIXED: 保存当前的消息处理函数，用于清理
+let currentMessageHandler = null
 
 function getSearchWorker() {
   if (!searchWorker) {
@@ -48,8 +50,20 @@ function getSearchWorker() {
       new URL('../workers/search.worker.js', import.meta.url),
       { type: 'module' }
     )
+    // FIXED: 添加全局错误处理
+    searchWorker.onerror = (error) => {
+      console.error('[SearchWorker] Error:', error.message)
+    }
   }
   return searchWorker
+}
+
+// FIXED: 清理当前的消息监听器
+function cleanupMessageHandler() {
+  if (currentMessageHandler && searchWorker) {
+    searchWorker.removeEventListener('message', currentMessageHandler)
+    currentMessageHandler = null
+  }
 }
 
 /**
@@ -147,8 +161,9 @@ export const useSearchStore = create(
 
     const { options, selectedBookId, searchId: prevSearchId, searchMode } = get()
 
-    // 取消之前的搜索
+    // FIXED: 取消之前的搜索并清理监听器
     if (prevSearchId) {
+      cleanupMessageHandler()
       get().cancelSearch()
     }
 
@@ -238,17 +253,20 @@ export const useSearchStore = create(
               get().addToHistory(searchQuery)
             }
 
-            // 移除监听器
-            worker.removeEventListener('message', handleMessage)
+            // FIXED: 使用统一清理函数
+            cleanupMessageHandler()
             break
 
           case 'cancelled':
             set({ isSearching: false })
-            worker.removeEventListener('message', handleMessage)
+            // FIXED: 使用统一清理函数
+            cleanupMessageHandler()
             break
         }
       }
 
+      // FIXED: 保存处理函数引用，用于后续清理
+      currentMessageHandler = handleMessage
       worker.addEventListener('message', handleMessage)
 
       // 发送搜索请求

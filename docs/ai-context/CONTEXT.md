@@ -20,7 +20,7 @@
 - **核心包**: 纯 JS 解析库（编码检测、章节识别、搜索引擎）
 
 **核心特点**:
-- 多编码支持（TXT GBK/UTF-8/Big5 自动检测，32MB <100ms）
+- 多编码支持（TXT GBK/UTF-8/Big5 自动检测，32MB 完整解析 <100ms：检测 <10ms + 解码 <50ms + 章节识别 <40ms）
 - 强大的全局搜索（4 种模式：概览/详细/频率/时间线）
 - 双模式存储（本地 IndexedDB + 云端同步）
 - 用户认证（JWT 登录/注册）
@@ -114,9 +114,11 @@ novel-reader/
 
 | 控制器 | 路径 | 职责 |
 |--------|------|------|
-| AuthController | /api/auth | 登录、注册、Token 刷新、用户信息 |
-| BookController | /api/books | 书籍 CRUD、上传、搜索 |
-| ProgressController | /api/progress | 阅读进度、书签（/bookmarks）|
+| AuthController | /api/auth | 用户认证：登录、注册、Token 刷新、获取当前用户 |
+| BookController | /api/books | 书籍管理：上传解析、列表查询、详情获取、章节获取、删除、搜索 |
+| ProgressController | /api/progress | 阅读进度：保存/获取进度、书签 CRUD（/bookmarks 子路由） |
+
+> **说明**: AuthController 处理无状态 JWT 认证；BookController 负责书籍全生命周期；ProgressController 管理用户阅读状态和书签（书签通过 /api/progress/bookmarks 访问）。
 
 ### 核心包模块（packages/core/src/）
 

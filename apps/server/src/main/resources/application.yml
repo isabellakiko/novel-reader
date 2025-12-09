@@ -11,10 +11,11 @@ spring:
     username: sa
     password:
 
-  # H2 Console (开发用)
+  # H2 Console (仅开发用)
+  # FIXED: 默认禁用，通过环境变量 H2_CONSOLE_ENABLED=true 启用
   h2:
     console:
-      enabled: true
+      enabled: ${H2_CONSOLE_ENABLED:false}
       path: /h2-console
 
   # JPA 配置

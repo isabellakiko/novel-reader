@@ -59,37 +59,23 @@ function setupRefreshTimer(token, refreshFn) {
   // 如果已过期，不设置定时器
   if (timeUntilExpiry <= 0) return
 
+  // FIXED: 如果已在缓冲区内（refreshIn === 0），立即刷新而非设置 0ms 定时器
+  if (refreshIn === 0) {
+    // 使用 setTimeout(0) 避免同步调用导致的问题
+    setTimeout(() => refreshFn(), 0)
+    return
+  }
+
   refreshTimer = setTimeout(() => {
     refreshFn()
   }, refreshIn)
 }
 
-/**
- * 自定义存储，同时维护一个独立的 token key 供 axios 拦截器使用
- */
+// FIXED: 简化存储，移除双重 token key，统一使用 auth-storage
 const authStorage = {
-  getItem: (name) => {
-    const str = localStorage.getItem(name)
-    return str
-  },
-  setItem: (name, value) => {
-    localStorage.setItem(name, value)
-    // 同步更新独立的 token key（供 axios 拦截器使用）
-    try {
-      const parsed = JSON.parse(value)
-      if (parsed?.state?.token) {
-        localStorage.setItem('auth-token', parsed.state.token)
-      } else {
-        localStorage.removeItem('auth-token')
-      }
-    } catch {
-      // 忽略解析错误
-    }
-  },
-  removeItem: (name) => {
-    localStorage.removeItem(name)
-    localStorage.removeItem('auth-token')
-  },
+  getItem: (name) => localStorage.getItem(name),
+  setItem: (name, value) => localStorage.setItem(name, value),
+  removeItem: (name) => localStorage.removeItem(name),
 }
 
 const useAuthStore = create(
@@ -167,8 +153,6 @@ const useAuthStore = create(
           isAuthenticated: false,
           error: null,
         })
-        // 清理独立的 token key
-        localStorage.removeItem('auth-token')
       },
 
       // 刷新 Token（带并发保护）
@@ -233,7 +217,6 @@ const useAuthStore = create(
             token: null,
             isAuthenticated: false,
           })
-          localStorage.removeItem('auth-token')
           return false
         }
 
@@ -258,7 +241,6 @@ const useAuthStore = create(
             isAuthenticated: false,
             isLoading: false,
           })
-          localStorage.removeItem('auth-token')
           return false
         }
       },
@@ -274,12 +256,7 @@ const useAuthStore = create(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
-      onRehydrateStorage: () => (state) => {
-        // 恢复时同步更新独立的 token key
-        if (state?.token) {
-          localStorage.setItem('auth-token', state.token)
-        }
-      },
+      // FIXED: 移除 onRehydrateStorage 中的 auth-token 同步，统一使用 auth-storage
     }
   )
 )

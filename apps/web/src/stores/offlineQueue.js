@@ -25,6 +25,31 @@ export const OperationType = {
 const MAX_RETRIES = 3
 
 /**
+ * FIXED: 不可重试的 HTTP 状态码
+ * 这些错误重试也不会成功，应立即放弃
+ */
+const NON_RETRYABLE_STATUS_CODES = [
+  400, // Bad Request - 请求数据有问题
+  401, // Unauthorized - Token 过期或无效
+  403, // Forbidden - 无权限
+  404, // Not Found - 资源不存在
+  409, // Conflict - 资源冲突
+  422, // Unprocessable Entity - 验证失败
+]
+
+/**
+ * FIXED: 判断错误是否可重试
+ */
+function isRetryableError(error) {
+  // 如果有 HTTP 状态码，检查是否在不可重试列表中
+  if (error?.status && NON_RETRYABLE_STATUS_CODES.includes(error.status)) {
+    return false
+  }
+  // 网络错误（status 为 0 或无 status）可以重试
+  return true
+}
+
+/**
  * 重试延迟（毫秒）
  */
 const RETRY_DELAYS = [1000, 3000, 10000]
@@ -146,6 +171,15 @@ const useOfflineQueueStore = create(
             successCount++
           } catch (error) {
             console.error(`Failed to execute operation:`, operation, error)
+
+            // FIXED: 检查错误是否可重试
+            if (!isRetryableError(error)) {
+              // 不可重试的错误，直接移除操作
+              console.warn(`Non-retryable error (status: ${error?.status}), removing operation`)
+              get().dequeue(operation.id)
+              failCount++
+              continue
+            }
 
             // 更新重试次数
             set((state) => ({

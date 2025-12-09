@@ -29,6 +29,7 @@ export default function FileUpload({ onFileSelect, isLoading, className }) {
 
   /**
    * 验证文件类型和大小
+   * FIXED: 增强验证，同时检查扩展名和 MIME 类型
    */
   const validateFile = useCallback((file) => {
     // 验证文件大小
@@ -37,10 +38,18 @@ export default function FileUpload({ onFileSelect, isLoading, className }) {
       return `文件过大（${fileSizeMB}MB），最大支持 ${MAX_FILE_SIZE_MB}MB`
     }
 
-    // 验证文件类型
+    // 验证文件扩展名
     const ext = '.' + file.name.split('.').pop().toLowerCase()
     if (!ACCEPTED_EXTENSIONS.includes(ext)) {
       return `不支持的文件类型: ${ext}`
+    }
+
+    // FIXED: 验证 MIME 类型（如果浏览器提供）
+    if (file.type) {
+      const validMimeTypes = ['text/plain', 'text/x-txt', 'application/octet-stream', '']
+      if (!validMimeTypes.includes(file.type) && !file.type.startsWith('text/')) {
+        return `文件类型不匹配: ${file.type}`
+      }
     }
 
     return null

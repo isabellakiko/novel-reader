@@ -7,6 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * JWT 配置类
  *
@@ -41,22 +43,23 @@ public class JwtConfig {
             );
         }
 
-        // 检查密钥长度
-        if (secret.length() < MIN_SECRET_LENGTH) {
+        // FIXED: 检查密钥字节长度而非字符长度，确保 HS384 安全强度
+        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (secretBytes.length < MIN_SECRET_LENGTH) {
             String[] activeProfiles = environment.getActiveProfiles();
             boolean isProd = java.util.Arrays.asList(activeProfiles).contains("prod");
 
             if (isProd) {
                 throw new IllegalStateException(
                     "JWT secret is too short for production. " +
-                    "Minimum length: " + MIN_SECRET_LENGTH + " characters. " +
-                    "Current length: " + secret.length()
+                    "Minimum length: " + MIN_SECRET_LENGTH + " bytes. " +
+                    "Current length: " + secretBytes.length + " bytes"
                 );
             } else {
                 log.warn(
-                    "JWT secret is shorter than recommended ({} chars). " +
-                    "For production, use at least {} characters.",
-                    secret.length(), MIN_SECRET_LENGTH
+                    "JWT secret is shorter than recommended ({} bytes). " +
+                    "For production, use at least {} bytes.",
+                    secretBytes.length, MIN_SECRET_LENGTH
                 );
             }
         }

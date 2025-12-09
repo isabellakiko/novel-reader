@@ -3,6 +3,7 @@ package com.novelreader.config;
 import com.novelreader.security.JwtAuthenticationFilter;
 import com.novelreader.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,6 +33,10 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
+
+    // FIXED: CORS origins 从配置读取，支持生产环境配置
+    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
+    private String allowedOriginsConfig;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -63,12 +68,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-            "http://localhost:5173",  // Vite dev server
-            "http://localhost:3000"
-        ));
+        // FIXED: 从配置读取 allowed origins，支持生产环境动态配置
+        List<String> origins = Arrays.asList(allowedOriginsConfig.split(","));
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        // FIXED: 限制允许的 headers，避免过于宽松
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"
+        ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

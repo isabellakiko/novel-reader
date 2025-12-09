@@ -111,17 +111,60 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /**
      * 获取客户端真实 IP
+     * FIXED: 改进 IP 识别逻辑，防止 X-Forwarded-For 欺骗
+     *
+     * 策略说明：
+     * 1. 优先使用 X-Real-IP（通常由可信代理设置）
+     * 2. X-Forwarded-For 取最右侧非私有 IP（最接近客户端的可信代理添加的）
+     * 3. 如果都不可用，使用 remoteAddr
      */
     private String getClientIP(HttpServletRequest request) {
+        // 优先使用 X-Real-IP（由可信反向代理如 Nginx 设置）
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty() && !isPrivateIP(xRealIp.trim())) {
+            return xRealIp.trim();
+        }
+
+        // X-Forwarded-For: client, proxy1, proxy2
+        // 从右向左取第一个非私有 IP（避免客户端伪造）
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+            String[] ips = xForwardedFor.split(",");
+            // 从右向左遍历，找到第一个非私有 IP
+            for (int i = ips.length - 1; i >= 0; i--) {
+                String ip = ips[i].trim();
+                if (!ip.isEmpty() && !isPrivateIP(ip)) {
+                    return ip;
+                }
+            }
+            // 如果全是私有 IP，返回最左边的（原始客户端）
+            return ips[0].trim();
         }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
+
         return request.getRemoteAddr();
+    }
+
+    /**
+     * 检查是否为私有 IP 地址
+     */
+    private boolean isPrivateIP(String ip) {
+        if (ip == null || ip.isEmpty()) {
+            return true;
+        }
+        // IPv4 私有地址范围
+        return ip.startsWith("10.") ||
+               ip.startsWith("172.16.") || ip.startsWith("172.17.") ||
+               ip.startsWith("172.18.") || ip.startsWith("172.19.") ||
+               ip.startsWith("172.20.") || ip.startsWith("172.21.") ||
+               ip.startsWith("172.22.") || ip.startsWith("172.23.") ||
+               ip.startsWith("172.24.") || ip.startsWith("172.25.") ||
+               ip.startsWith("172.26.") || ip.startsWith("172.27.") ||
+               ip.startsWith("172.28.") || ip.startsWith("172.29.") ||
+               ip.startsWith("172.30.") || ip.startsWith("172.31.") ||
+               ip.startsWith("192.168.") ||
+               ip.equals("127.0.0.1") ||
+               ip.equals("::1") ||
+               ip.startsWith("0:0:0:0:0:0:0:1");
     }
 
     /**

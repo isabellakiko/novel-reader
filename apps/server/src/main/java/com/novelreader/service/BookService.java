@@ -64,11 +64,22 @@ public class BookService {
             throw BusinessException.badRequest("文件名过长");
         }
 
-        // 验证 MIME 类型（可选，TXT 文件的 MIME 类型可能不一致）
+        // FIXED: 增强 MIME 类型验证
         String contentType = file.getContentType();
-        if (contentType != null && !contentType.startsWith("text/") &&
-            !contentType.equals("application/octet-stream")) {
-            log.warn("文件 MIME 类型可能不正确: {}", contentType);
+        if (contentType != null) {
+            // 允许的 MIME 类型白名单
+            boolean validMimeType = contentType.startsWith("text/") ||
+                contentType.equals("application/octet-stream") ||
+                contentType.equals("application/x-empty");
+            if (!validMimeType) {
+                log.warn("文件 MIME 类型可能不正确: {}", contentType);
+                // 对于明显的二进制类型，拒绝上传
+                if (contentType.startsWith("application/") &&
+                    !contentType.equals("application/octet-stream") &&
+                    !contentType.equals("application/x-empty")) {
+                    throw BusinessException.badRequest("不支持的文件类型: " + contentType);
+                }
+            }
         }
 
         User user = userRepository.findById(userId)
@@ -203,6 +214,17 @@ public class BookService {
     }
 
     /**
+     * FIXED: 转义 SQL LIKE 通配符，防止通配符注入
+     */
+    private String escapeLikeWildcards(String input) {
+        if (input == null) return null;
+        return input
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
+    }
+
+    /**
      * 搜索书籍
      */
     public PageResponse<BookDTO> searchBooks(Long userId, String keyword, int page, int size) {
@@ -215,12 +237,15 @@ public class BookService {
             throw BusinessException.badRequest("搜索关键字不能超过 " + MAX_KEYWORD_LENGTH + " 个字符");
         }
 
+        // FIXED: 转义 LIKE 通配符
+        String escapedKeyword = escapeLikeWildcards(keyword);
+
         // 参数验证和限制
         page = Math.max(0, page);
         size = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<Book> bookPage = bookRepository.searchByKeyword(userId, keyword, pageable);
+        Page<Book> bookPage = bookRepository.searchByKeyword(userId, escapedKeyword, pageable);
 
         List<BookDTO> books = bookPage.getContent().stream()
             .map(this::toBookDTO)
